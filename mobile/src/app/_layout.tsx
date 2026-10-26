@@ -13,6 +13,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAppFonts } from '@/hooks/use-app-fonts';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSnippetWidget } from '@/hooks/use-snippet-widget';
 import { AuthProvider, useAuth } from '@/lib/auth/auth-context';
 import { useDatabaseMigrations } from '@/lib/db/client';
 
@@ -72,6 +73,7 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { status } = useAuth();
+  useSnippetWidget(status);
 
   // Keep the splash up until we know which group to show, so signed-in users never see sign-in flash.
   useEffect(() => {

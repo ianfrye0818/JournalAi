@@ -1,5 +1,26 @@
 # Welcome to your Expo app 👋
 
+## Android quick snippet widget
+
+Build and install the Android app with `npm run android` (or an EAS development/production
+build). Native widgets require a new app build and do not run in Expo Go.
+Open JournalAI and sign in, then long press your home screen, choose **Widgets**, and add
+**JournalAI · Quick snippet**.
+
+Tap **+ Add snippet** to open Quick capture with the keyboard ready. Save text or use the
+existing dictation button. The widget shows the number of non-deleted snippets for your
+current journal day, respecting Settings → Day rollover (4 AM by default).
+
+Counts refresh after local changes, sync, account changes, and app resumes. While the app
+is closed, Android requests updates about every 30 minutes; battery restrictions can delay
+updates, including the count resetting after day rollover. The native widget reads only the
+count from the existing local database, so it works offline.
+
+Implementation lives in `modules/snippet-widget`, an autolinked local Expo module; no edits
+to generated native projects are needed. To verify on a device, add and delete snippets,
+pull snippets from another device, change the rollover hour, and sign out. Confirm the count
+matches Today and that the button opens capture from both a running and a closed app.
+
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started

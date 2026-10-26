@@ -18,8 +18,8 @@ import { haptics } from '@/lib/haptics';
 import { snippetsRepo } from '@/lib/snippets/repo';
 
 /**
- * Quick capture, deep-linkable as `journalai://capture`. Opened cold from a link (or the widget,
- * later) there's nothing to go back to, so it falls through to Today.
+ * Quick capture, deep-linkable as `journalai://capture`. Opened cold from a link or widget,
+ * there's nothing to go back to, so it falls through to Today.
  */
 export default function CaptureScreen() {
   const theme = useTheme();
