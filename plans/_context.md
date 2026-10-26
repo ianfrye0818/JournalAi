@@ -50,6 +50,10 @@ Phase 1: Android APK through EAS (preview profile). Later: Play Store, App Store
   is the server clock and the pull cursor. Mobile `src/lib/sync/` (`syncEngine`, started/stopped by the auth
   context; `snippetsRepo` writes call `notifyLocalChange()`). Sign-out flushes, then wipes only if the outbox is
   empty; kv `sync.ownerId` wipes leftovers when a different account signs in.
+- AI interview (after Task 08): global `AnthropicService.generateStructured({label, system, messages, schema})`
+  (`src/services/anthropic.service.ts`): structured outputs + Zod validation, one retry on unusable output, then 502.
+  `GET /api/days/:date`, `POST /api/days/:date/interview` (max 2 rounds), `PATCH /api/questions/:id`. Prompt in
+  `src/features/days/prompts/interview.prompt.ts`. Shared DTOs: `QuestionResponse`, `EntryResponse`, `DayDateParams`.
 
 ## Gotchas
 - Path aliases: Nest CLI rewrites them at build time, but Jest does not → `jest.moduleNameMapper` is required.

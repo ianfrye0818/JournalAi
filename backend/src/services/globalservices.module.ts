@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { AnthropicService } from './anthropic.service';
 import { AppLogger } from './applogger.service';
 import { EmailService } from './email.service';
 import { PrismaService } from './prisma.service';
@@ -9,12 +10,20 @@ import { TokenService } from './token.service';
 @Global()
 @Module({
   providers: [
+    AnthropicService,
     AppLogger,
     EmailService,
     PrismaService,
     RedisService,
     TokenService,
   ],
-  exports: [AppLogger, EmailService, PrismaService, RedisService, TokenService],
+  exports: [
+    AnthropicService,
+    AppLogger,
+    EmailService,
+    PrismaService,
+    RedisService,
+    TokenService,
+  ],
 })
 export class GlobalServicesModule {}
