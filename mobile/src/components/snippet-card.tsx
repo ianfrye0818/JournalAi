@@ -1,8 +1,14 @@
+import { useRef } from 'react';
+import Swipeable, {
+  SwipeDirection,
+  type SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Card, Icon, type IconName } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import type { Snippet, SnippetSource } from '@/lib/db/schema';
 
 const sourceIcons: Record<SnippetSource, IconName> = {
@@ -21,20 +27,33 @@ export type SnippetCardProps = {
   snippet: Snippet;
   /** Highlights the card while its text is loaded in the composer. */
   editing?: boolean;
-  onLongPress?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 };
 
-export function SnippetCard({ snippet, editing = false, onLongPress }: SnippetCardProps) {
+export function SnippetCard({ snippet, editing = false, onEdit, onDelete }: SnippetCardProps) {
+  const swipeable = useRef<SwipeableMethods>(null);
+  const theme = useTheme();
+  const actionable = !!(onEdit || onDelete);
+
   const time = snippet.capturedAt.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
   });
 
-  return (
+  const card = (
     <Card
-      onLongPress={onLongPress}
+      accessible
+      accessibilityActions={[
+        ...(onEdit ? [{ name: 'edit', label: 'Edit snippet' }] : []),
+        ...(onDelete ? [{ name: 'delete', label: 'Delete snippet' }] : []),
+      ]}
+      onAccessibilityAction={({ nativeEvent }) => {
+        if (nativeEvent.actionName === 'edit') onEdit?.();
+        if (nativeEvent.actionName === 'delete') onDelete?.();
+      }}
       accessibilityLabel={`${sourceLabels[snippet.source]} snippet at ${time}: ${snippet.text}`}
-      accessibilityHint="Long press to edit or delete"
+      accessibilityHint={actionable ? 'Swipe right to edit or left to delete' : undefined}
       style={editing && styles.editing}>
       <View style={styles.meta}>
         <Icon name={sourceIcons[snippet.source]} size={14} themeColor="textTertiary" />
@@ -45,9 +64,58 @@ export function SnippetCard({ snippet, editing = false, onLongPress }: SnippetCa
       <ThemedText>{snippet.text}</ThemedText>
     </Card>
   );
+
+  if (!actionable) return card;
+
+  return (
+    <Swipeable
+      ref={swipeable}
+      leftThreshold={72}
+      rightThreshold={72}
+      dragOffsetFromLeft={20}
+      dragOffsetFromRight={-20}
+      overshootLeft={false}
+      overshootRight={false}
+      containerStyle={styles.swipeContainer}
+      renderLeftActions={
+        onEdit
+          ? () => (
+              <View
+                accessible={false}
+                style={[styles.swipeAction, { backgroundColor: theme.accentSoft }]}>
+                <ThemedText themeColor="accent" type="smallBold">
+                  Edit
+                </ThemedText>
+              </View>
+            )
+          : undefined
+      }
+      renderRightActions={
+        onDelete
+          ? () => (
+              <View
+                accessible={false}
+                style={[styles.swipeAction, { backgroundColor: theme.danger }]}>
+                <ThemedText style={{ color: theme.background }} type="smallBold">
+                  Delete
+                </ThemedText>
+              </View>
+            )
+          : undefined
+      }
+      onSwipeableOpen={(direction) => {
+        swipeable.current?.reset();
+        if (direction === SwipeDirection.RIGHT) onEdit?.();
+        else onDelete?.();
+      }}>
+      {card}
+    </Swipeable>
+  );
 }
 
 const styles = StyleSheet.create({
+  swipeContainer: { borderRadius: Radius.lg },
+  swipeAction: { width: 96, alignItems: 'center', justifyContent: 'center' },
   meta: {
     flexDirection: 'row',
     alignItems: 'center',

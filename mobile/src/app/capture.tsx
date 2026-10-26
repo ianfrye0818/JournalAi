@@ -1,3 +1,6 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { afterCapture } from '@/lib/days/after-capture';
+import { dayHref } from '@/lib/days/flow';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, TextInput, View } from 'react-native';
@@ -20,6 +23,7 @@ import { snippetsRepo } from '@/lib/snippets/repo';
  */
 export default function CaptureScreen() {
   const theme = useTheme();
+  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
@@ -38,9 +42,15 @@ export default function CaptureScreen() {
     dictation.cancel();
     setSaving(true);
     try {
-      await snippetsRepo.add(text, { source: dictation.dictated ? 'voice' : 'text' });
+      const snippet = await snippetsRepo.add(text, {
+        source: dictation.dictated ? 'voice' : 'text',
+      });
       haptics.success();
-      close();
+      setText('');
+      void afterCapture(queryClient, snippet.localDate, {
+        onKeep: close,
+        onReopened: () => router.replace(dayHref(snippet.localDate, 'draft')),
+      });
     } catch {
       setSaving(false);
       Alert.alert("Couldn't save snippet", 'Your text is still here. Try again.');

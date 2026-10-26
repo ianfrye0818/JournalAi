@@ -36,19 +36,21 @@ export default function ReviewScreen() {
     day: 'numeric',
   });
 
-  const openActions = (snippet: Snippet) => {
-    haptics.longPress();
-    Alert.alert('Snippet', undefined, [
-      { text: 'Edit', onPress: () => setEditing(snippet.clientId) },
+  const deleteSnippet = (snippet: Snippet) => {
+    Alert.alert('Delete snippet?', 'This snippet will be removed from your journal.', [
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          await snippetsRepo.remove(snippet.clientId);
-          haptics.warning();
+          try {
+            await snippetsRepo.remove(snippet.clientId);
+            haptics.warning();
+          } catch {
+            Alert.alert("Couldn't delete snippet", 'Try again.');
+          }
         },
       },
-      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
@@ -87,7 +89,7 @@ export default function ReviewScreen() {
           </ThemedText>
           {count > 0 && (
             <ThemedText themeColor="textSecondary">
-              Long press a snippet to fix or remove it before the AI reads them.
+              Swipe right to edit a snippet or left to delete it before the AI reads them.
             </ThemedText>
           )}
         </View>
@@ -108,7 +110,12 @@ export default function ReviewScreen() {
           editing === item.clientId ? (
             <SnippetEditor key={item.clientId} snippet={item} onDone={() => setEditing(null)} />
           ) : (
-            <SnippetCard key={item.clientId} snippet={item} onLongPress={() => openActions(item)} />
+            <SnippetCard
+              key={item.clientId}
+              snippet={item}
+              onEdit={() => setEditing(item.clientId)}
+              onDelete={() => void deleteSnippet(item)}
+            />
           ),
         )}
       </KeyboardAwareScrollView>

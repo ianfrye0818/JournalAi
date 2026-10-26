@@ -1,3 +1,7 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
+import { afterCapture } from '@/lib/days/after-capture';
+import { dayHref } from '@/lib/days/flow';
 import { useRef, useState } from 'react';
 import { Alert, FlatList, Platform, StyleSheet, View, type TextInputInstance } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -20,6 +24,7 @@ import { snippetsRepo, useSnippetsByDate } from '@/lib/snippets/repo';
 
 export default function TodayScreen() {
   const theme = useTheme();
+  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const today = useLocalDate();
   const { data: items } = useSnippetsByDate(today);
@@ -52,43 +57,52 @@ export default function TodayScreen() {
     if (!text) return;
     // Save what's on screen; a late final result shouldn't refill the box after it clears.
     dictation.cancel();
+    let added: Snippet | undefined;
     try {
       if (editing) {
         await snippetsRepo.edit(editing.clientId, text);
         setEditing(null);
       } else {
-        await snippetsRepo.add(text, { source: dictation.dictated ? 'voice' : 'text' });
+        added = await snippetsRepo.add(text, { source: dictation.dictated ? 'voice' : 'text' });
         requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
       }
       setDraft('');
       dictation.reset();
       haptics.success();
+      if (added) {
+        const date = added.localDate;
+        void afterCapture(queryClient, date, {
+          onKeep: () => {},
+          onReopened: () => router.push(dayHref(date, 'draft')),
+        });
+      }
     } catch {
       Alert.alert("Couldn't save snippet", 'Your text is still in the box. Try again.');
     }
   };
 
-  const openActions = (snippet: Snippet) => {
-    haptics.longPress();
-    Alert.alert('Snippet', undefined, [
-      {
-        text: 'Edit',
-        onPress: () => {
-          setEditing(snippet);
-          setDraft(snippet.text);
-          inputRef.current?.focus();
-        },
-      },
+  const editSnippet = (snippet: Snippet) => {
+    setEditing(snippet);
+    setDraft(snippet.text);
+    inputRef.current?.focus();
+  };
+
+  const deleteSnippet = (snippet: Snippet) => {
+    Alert.alert('Delete snippet?', 'This snippet will be removed from your journal.', [
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          if (editing?.clientId === snippet.clientId) cancelEdit();
-          await snippetsRepo.remove(snippet.clientId);
-          haptics.warning();
+          try {
+            await snippetsRepo.remove(snippet.clientId);
+            if (editing?.clientId === snippet.clientId) cancelEdit();
+            haptics.warning();
+          } catch {
+            Alert.alert("Couldn't delete snippet", 'Try again.');
+          }
         },
       },
-      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
@@ -104,7 +118,8 @@ export default function TodayScreen() {
           <SnippetCard
             snippet={item}
             editing={editing?.clientId === item.clientId}
-            onLongPress={() => openActions(item)}
+            onEdit={() => editSnippet(item)}
+            onDelete={() => void deleteSnippet(item)}
           />
         )}
         ListHeaderComponent={
