@@ -5,7 +5,7 @@ export const configSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'staging']),
   PORT: z.coerce.number(),
   API_URL: z.url(),
-  FRONTEND_URL: z.url(),
+  FRONTEND_URL: z.url().optional(),
   SESSION_SECRET: z.string(),
 
   // DATABASE

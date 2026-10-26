@@ -1,69 +1,99 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
+}
+
+model User {
+    id           String   @id @default(uuid())
+    email        String   @unique
+    passwordHash String
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+    isActive     Boolean  @default(true)
+
+    Snippets      Snippet[]
+    DailySessions DailySession[]
+    Entries       Entry[]
+    StyleProfiles StyleProfile[]
+    Questions     Question[]
+
+    @@map("user")
 }
 
 model Snippet {
-  id         String   @id @default(uuid())
-  text       String
-  source     String   @default("text") // text | voice | share
-  capturedAt DateTime @default(now())
-  clientId   String   @unique // Generated on device, makes sync idempotent
-  mediaUrl   String?
-  sessionId  String?
+    id         String   @id @default(uuid())
+    text       String
+    source     String   @default("text") // text | voice | share
+    capturedAt DateTime @default(now())
+    clientId   String   @unique // Generated on device, makes sync idempotent
+    mediaUrl   String?
+    sessionId  String?
+    userId     String
 
-  Session DailySession? @relation(fields: [sessionId], references: [id])
+    User    User          @relation(fields: [userId], references: [id])
+    Session DailySession? @relation(fields: [sessionId], references: [id])
 
-  @@map("snippet")
+    @@map("snippet")
 }
 
 model DailySession {
-  id     String   @id @default(uuid())
-  date   DateTime @unique // local calendar date
-  status String   @default("open") // open | interviewing | drafted | finalized
+    id     String   @id @default(uuid())
+    date   DateTime @unique // local calendar date
+    status String   @default("open") // open | interviewing | drafted | finalized
 
-  Questions Question[]
-  Entry     Entry?
-  Snippets  Snippet[]
+    Questions Question[]
+    Entry     Entry?
+    Snippets  Snippet[]
+    userId    String
 
-  @@map("daily_session")
+    User User @relation(fields: [userId], references: [id])
+
+    @@map("daily_session")
 }
 
 model Question {
-  id        String  @id @default(uuid())
-  sessionId String  @unique
-  text      String
-  answer    String?
-  skipped   Boolean @default(false)
-  order     Int
+    id        String  @id @default(uuid())
+    sessionId String  @unique
+    text      String
+    answer    String?
+    skipped   Boolean @default(false)
+    order     Int
 
-  Session DailySession? @relation(fields: [sessionId], references: [id])
+    Session DailySession? @relation(fields: [sessionId], references: [id])
+    userId  String
 
-  @@map("question")
+    User User @relation(fields: [userId], references: [id])
+
+    @@map("question")
 }
 
 model Entry {
-  id        String   @id @default(uuid())
-  sessionId String   @unique
-  body      String
-  aiDraft   String
-  flags     Json?
-  updatedAt DateTime @updatedAt
+    id        String   @id @default(uuid())
+    sessionId String   @unique
+    body      String
+    aiDraft   String
+    flags     Json?
+    updatedAt DateTime @updatedAt
 
-  Session DailySession? @relation(fields: [sessionId], references: [id])
+    Session DailySession? @relation(fields: [sessionId], references: [id])
+    userId  String
+
+    User User @relation(fields: [userId], references: [id])
+
+    @@map("entry")
 }
 
 model StyleProfile {
-  id      String  @id @default(uuid())
-  samples String // a few of your past entries
-  notes   String? // "first person, dry humor, no emojis"
+    id      String  @id @default(uuid())
+    samples String // a few of your past entries
+    notes   String? // "first person, dry humor, no emojis"
+    userId  String
+
+    User User @relation(fields: [userId], references: [id])
+
+    @@map("style_profile")
 }
