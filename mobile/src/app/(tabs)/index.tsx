@@ -3,6 +3,7 @@ import { Alert, FlatList, Platform, StyleSheet, View, type TextInputInstance } f
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { WrapUpCard } from '@/components/day/wrap-up-card';
 import { SnippetCard } from '@/components/snippet-card';
 import { SnippetComposer } from '@/components/snippet-composer';
 import { SyncStatus } from '@/components/sync-status';
@@ -126,6 +127,13 @@ export default function TodayScreen() {
             </View>
           </View>
         }
+        ListFooterComponent={
+          count > 0 ? (
+            <View style={styles.footer}>
+              <WrapUpCard date={today} />
+            </View>
+          ) : undefined
+        }
         ListEmptyComponent={
           <Card>
             <EmptyState
@@ -201,6 +209,9 @@ const styles = StyleSheet.create({
   headerMeta: {
     alignItems: 'flex-end',
     gap: Spacing.half,
+  },
+  footer: {
+    marginTop: Spacing.three,
   },
   composer: {
     width: '100%',

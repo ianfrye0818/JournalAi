@@ -8,6 +8,7 @@ import { EntriesModule } from './features/entries/entries.module';
 import { HealthModule } from './features/health/health.module';
 import { QuestionsModule } from './features/questions/questions.module';
 import { SnippetsModule } from './features/snippets/snippets.module';
+import { StyleProfileModule } from './features/style-profile/style-profile.module';
 import { AuthGuard } from './guards/auth.guard';
 import { CustomConfigModule } from './services/configService/config.module';
 import { configSchema } from './services/configService/config.schema';
@@ -27,6 +28,7 @@ import { GlobalServicesModule } from './services/globalservices.module';
     EntriesModule,
     QuestionsModule,
     AuthModule,
+    StyleProfileModule,
   ],
   controllers: [],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],

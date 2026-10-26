@@ -1,6 +1,29 @@
-import { Controller } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Query,
+} from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiConflictResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '@src/decorators/current-user.decorator';
+import { SearchEntriesQuery } from './SearchEntries/SearchEntries.query';
+import { SearchEntriesRequest } from './SearchEntries/SearchEntries.request';
+import { SearchEntriesResponse } from './SearchEntries/SearchEntries.response';
+import { UpdateEntryCommand } from './UpdateEntry/UpdateEntry.command';
+import { UpdateEntryRequest } from './UpdateEntry/UpdateEntry.request';
+import { UpdateEntryResponse } from './UpdateEntry/UpdateEntry.response';
 
 @Controller('entries')
 @ApiTags('Entries')
@@ -10,7 +33,24 @@ export class EntriesController {
     private readonly queryBus: QueryBus,
   ) {}
 
-  // GET /entries?q=
+  @Get()
+  @ApiOkResponse({ type: [SearchEntriesResponse] })
+  search(
+    @CurrentUser() user: AuthUser,
+    @Query() query: SearchEntriesRequest,
+  ): Promise<SearchEntriesResponse[]> {
+    return this.queryBus.execute(new SearchEntriesQuery(user.id, query));
+  }
 
-  // PATCH /entries/:id
+  @Patch(':id')
+  @ApiOkResponse({ type: UpdateEntryResponse })
+  @ApiNotFoundResponse({ description: 'No such entry for this user' })
+  @ApiConflictResponse({ description: 'The day is finalized' })
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateEntryRequest,
+  ): Promise<UpdateEntryResponse> {
+    return this.commandBus.execute(new UpdateEntryCommand(user.id, id, body));
+  }
 }

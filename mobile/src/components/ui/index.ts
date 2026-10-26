@@ -6,3 +6,4 @@ export { Icon, type IconName, type IconProps } from './icon';
 export { IconButton, type IconButtonProps } from './icon-button';
 export { Screen, type ScreenProps } from './screen';
 export { TextField, type TextFieldProps } from './text-field';
+export { Skeleton, type SkeletonProps } from './skeleton';

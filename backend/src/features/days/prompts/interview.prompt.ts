@@ -88,7 +88,7 @@ export const buildInterviewMessage = ({
 };
 
 /** Capture times in the user's zone, so "9:15 PM" reads the way they lived it. */
-const timeFormatter = (timezone: string) => {
+export const timeFormatter = (timezone: string) => {
   let format: Intl.DateTimeFormat;
   try {
     format = new Intl.DateTimeFormat('en-US', {

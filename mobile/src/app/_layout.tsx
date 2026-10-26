@@ -89,6 +89,7 @@ function RootNavigator() {
       <Stack.Protected guard={signedIn} redirectTo="/sign-in">
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="capture" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="day/[date]" />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn} redirectTo="/">
         <Stack.Screen name="(auth)" />

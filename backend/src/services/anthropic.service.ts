@@ -12,11 +12,18 @@ const MAX_ATTEMPTS = 2;
 export type StructuredRequest<T extends z.ZodType> = {
   /** Short name for logs, e.g. `interview`. */
   label: string;
-  system: string;
+  /** Text blocks let callers mark a stable prefix with `cache_control`. */
+  system: string | Anthropic.Beta.BetaTextBlockParam[];
   messages: Anthropic.Beta.BetaMessageParam[];
   schema: T;
   maxTokens?: number;
   effort?: 'low' | 'medium' | 'high';
+};
+
+export type StructuredResult<T> = {
+  output: T;
+  /** The model that actually answered, which differs from the configured one after a fallback. */
+  model: string;
 };
 
 /** Thrown internally when a response can't be used; the caller retries or gives up with a 502. */
@@ -54,6 +61,13 @@ export class AnthropicService {
   async generateStructured<T extends z.ZodType>(
     request: StructuredRequest<T>,
   ): Promise<z.infer<T>> {
+    return (await this.generateStructuredWithModel(request)).output;
+  }
+
+  /** Like `generateStructured`, but also reports which model wrote the output. */
+  async generateStructuredWithModel<T extends z.ZodType>(
+    request: StructuredRequest<T>,
+  ): Promise<StructuredResult<z.infer<T>>> {
     for (let attempt = 1; ; attempt++) {
       try {
         return await this.attempt(request);
@@ -83,7 +97,7 @@ export class AnthropicService {
     schema,
     maxTokens = 16_000,
     effort = 'medium',
-  }: StructuredRequest<T>): Promise<z.infer<T>> {
+  }: StructuredRequest<T>): Promise<StructuredResult<z.infer<T>>> {
     const response = await this.client.beta.messages.create({
       model: this.model,
       max_tokens: maxTokens,
@@ -127,7 +141,7 @@ export class AnthropicService {
         true,
       );
     }
-    return parsed.data;
+    return { output: parsed.data, model: response.model };
   }
 
   private logUsage(label: string, response: Anthropic.Beta.BetaMessage) {

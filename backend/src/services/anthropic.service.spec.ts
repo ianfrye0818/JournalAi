@@ -60,6 +60,17 @@ describe(AnthropicService, () => {
     });
   });
 
+  it('reports the model that answered, which may be a fallback', async () => {
+    create.mockResolvedValue({
+      ...message('{"items":[]}'),
+      model: 'claude-opus-5-5',
+    });
+
+    await expect(service.generateStructuredWithModel(request)).resolves.toEqual(
+      { output: { items: [] }, model: 'claude-opus-5-5' },
+    );
+  });
+
   it('retries once after schema-invalid output', async () => {
     create
       .mockResolvedValueOnce(message('{"items":["a","b","c"]}'))
