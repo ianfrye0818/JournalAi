@@ -1,3 +1,5 @@
+import { useTimeFormat } from '@/lib/settings';
+import { formatTime } from '@/lib/time';
 import { useRef } from 'react';
 import Swipeable, {
   SwipeDirection,
@@ -36,10 +38,12 @@ export function SnippetCard({ snippet, editing = false, onEdit, onDelete }: Snip
   const theme = useTheme();
   const actionable = !!(onEdit || onDelete);
 
-  const time = snippet.capturedAt.toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  const timeFormat = useTimeFormat();
+  const time = formatTime(
+    snippet.capturedAt.getHours(),
+    snippet.capturedAt.getMinutes(),
+    timeFormat,
+  );
 
   const card = (
     <Card

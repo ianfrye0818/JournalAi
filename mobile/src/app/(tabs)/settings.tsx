@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
-import { router } from 'expo-router';
-import { useRolloverHour } from '@/lib/settings';
+import { router, useFocusEffect } from 'expo-router';
+import { formatTime, formatStoredTime } from '@/lib/time';
+import { useTimeFormat, setTimeFormat, useRolloverHour } from '@/lib/settings';
 import Constants from 'expo-constants';
-import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { ExportSettingsCard } from '@/components/settings/export-settings';
 import { ThemedText } from '@/components/themed-text';
@@ -12,15 +13,44 @@ import { Button, Card, Icon, Screen, type IconName } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth/auth-context';
+import { getReminderTime } from '@/lib/reminders';
 import { usePendingSnippetCount } from '@/lib/sync';
 
-function SettingRow({ icon, label, value }: { icon: IconName; label: string; value: string }) {
-  return (
-    <View style={styles.row}>
+function SettingRow({
+  icon,
+  label,
+  value,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  value: string;
+  onPress?: () => void;
+}) {
+  const content = (
+    <>
       <Icon name={icon} size={20} themeColor="textSecondary" />
       <ThemedText style={styles.rowLabel}>{label}</ThemedText>
-      <ThemedText themeColor="textSecondary">{value}</ThemedText>
-    </View>
+      <ThemedText themeColor={onPress ? 'accent' : 'textSecondary'}>{value}</ThemedText>
+      {onPress && (
+        <Icon
+          name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+          size={16}
+          themeColor="textTertiary"
+        />
+      )}
+    </>
+  );
+  return onPress ? (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+      {content}
+    </Pressable>
+  ) : (
+    <View style={styles.row}>{content}</View>
   );
 }
 
@@ -33,6 +63,23 @@ export default function SettingsScreen() {
     queryFn: () => api<{ samples: string; notes: string | null } | null>('/style-profile'),
   });
   const hour = useRolloverHour();
+  const timeFormat = useTimeFormat();
+  const [reminder, setReminder] = useState('…');
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      getReminderTime()
+        .then((time) => {
+          if (active) setReminder(time || 'Off');
+        })
+        .catch(() => {
+          if (active) setReminder('Unavailable');
+        });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
   const [deleting, setDeleting] = useState(false);
   const pending = usePendingSnippetCount();
 
@@ -91,12 +138,14 @@ export default function SettingsScreen() {
             android: 'wb_twilight',
             web: 'wb_twilight',
           }}
+          onPress={() => router.push('/settings/day')}
           label="New day starts at"
-          value={`${String(hour).padStart(2, '0')}:00`}
+          value={formatTime(hour, 0, timeFormat)}
         />
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <SettingRow
           icon={{ ios: 'textformat', android: 'edit_note', web: 'edit_note' }}
+          onPress={() => router.push('/settings/style')}
           label="Writing style"
           value={
             style.isPending
@@ -108,23 +157,41 @@ export default function SettingsScreen() {
                   : 'Not set'
           }
         />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <SettingRow
+          icon={{ ios: 'bell', android: 'notifications', web: 'notifications' }}
+          label="Evening reminder"
+          value={/^\d{2}:\d{2}$/.test(reminder) ? formatStoredTime(reminder, timeFormat) : reminder}
+          onPress={() => router.push('/settings/reminder')}
+        />
       </Card>
 
       <Card>
-        <Button
-          title="Writing style"
-          variant="secondary"
-          onPress={() => router.push('/settings/style')}
-        />
-        <Button
-          title="Day rollover & timezone"
-          variant="secondary"
-          onPress={() => router.push('/settings/day')}
-        />
-        <Button
-          title="Evening reminder"
-          variant="secondary"
-          onPress={() => router.push('/settings/reminder')}
+        <SettingRow
+          icon={{ ios: 'clock', android: 'schedule', web: 'schedule' }}
+          label="Time format"
+          value={timeFormat === '12h' ? '12-hour (AM/PM)' : '24-hour'}
+          onPress={() =>
+            Alert.alert('Time format', 'Choose how times appear in the app.', [
+              {
+                text: '12-hour (6:00 PM)',
+                onPress: () => {
+                  void setTimeFormat('12h').catch(() =>
+                    Alert.alert('Could not save time format', 'Try again.'),
+                  );
+                },
+              },
+              {
+                text: '24-hour (18:00)',
+                onPress: () => {
+                  void setTimeFormat('24h').catch(() =>
+                    Alert.alert('Could not save time format', 'Try again.'),
+                  );
+                },
+              },
+              { text: 'Cancel', style: 'cancel' },
+            ])
+          }
         />
       </Card>
       <ExportSettingsCard />
@@ -164,6 +231,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  pressed: { opacity: 0.6 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

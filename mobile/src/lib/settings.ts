@@ -1,3 +1,4 @@
+import type { TimeFormat } from '@/lib/time';
 import { eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
@@ -29,4 +30,24 @@ export async function setRolloverHour(hour: number) {
     target: kv.key,
     set: { value },
   });
+}
+
+const TIME_FORMAT_KEY = 'settings.timeFormat';
+
+/** Default to the familiar AM/PM clock until explicitly changed. */
+export function useTimeFormat(): TimeFormat {
+  const { data } = useLiveQuery(db.select().from(kv).where(eq(kv.key, TIME_FORMAT_KEY)));
+  const value =
+    data[0]?.value ?? db.select().from(kv).where(eq(kv.key, TIME_FORMAT_KEY)).get()?.value;
+  return value === '24h' ? '24h' : '12h';
+}
+
+export async function setTimeFormat(format: TimeFormat) {
+  await db
+    .insert(kv)
+    .values({ key: TIME_FORMAT_KEY, value: format })
+    .onConflictDoUpdate({
+      target: kv.key,
+      set: { value: format },
+    });
 }

@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { Button, Card, Screen, TextField } from '@/components/ui';
 import { ThemedText } from '@/components/themed-text';
 import { useAuth } from '@/lib/auth/auth-context';
-import { getRolloverHour } from '@/lib/settings';
+import { formatTime, parseTime } from '@/lib/time';
+import { useTimeFormat, getRolloverHour } from '@/lib/settings';
 export default function DaySettings() {
   const { user, updateProfile } = useAuth();
-  const [hour, setHour] = useState(String(getRolloverHour()));
+  const timeFormat = useTimeFormat();
+  const [hour, setHour] = useState(() => formatTime(getRolloverHour(), 0, timeFormat));
   const [timezone, setTimezone] = useState(
     user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
   );
@@ -19,8 +21,10 @@ export default function DaySettings() {
       headerRight={<Button title="Back" variant="ghost" onPress={() => router.back()} />}>
       <Card>
         <TextField
-          label="New day starts at hour (0–23)"
-          keyboardType="number-pad"
+          label={
+            timeFormat === '12h' ? 'New day starts at (h:00 AM/PM)' : 'New day starts at (HH:00)'
+          }
+          autoCapitalize="characters"
           value={hour}
           onChangeText={setHour}
         />
@@ -44,14 +48,19 @@ export default function DaySettings() {
           loading={busy}
           onPress={async () => {
             setMessage('');
-            if (!/^\d{1,2}$/.test(hour) || Number(hour) > 23) {
-              setMessage('Choose an hour from 0 to 23.');
+            const canonical = parseTime(hour, timeFormat);
+            if (!canonical || !canonical.endsWith(':00')) {
+              setMessage(
+                timeFormat === '12h'
+                  ? 'Choose a whole hour, like 4:00 AM.'
+                  : 'Choose a whole hour, like 04:00.',
+              );
               return;
             }
             setBusy(true);
             try {
               await updateProfile({
-                dayRolloverHour: Number(hour),
+                dayRolloverHour: Number(canonical.split(':')[0]),
                 timezone: timezone.trim(),
               });
               setMessage('Saved.');
