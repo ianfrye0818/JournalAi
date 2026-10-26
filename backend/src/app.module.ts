@@ -1,3 +1,4 @@
+import { MonthlySummaryService } from './features/monthly-summary/monthly-summary.service';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { CqrsModule } from '@nestjs/cqrs';
@@ -31,6 +32,6 @@ import { GlobalServicesModule } from './services/globalservices.module';
     StyleProfileModule,
   ],
   controllers: [],
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
+  providers: [MonthlySummaryService, { provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule {}

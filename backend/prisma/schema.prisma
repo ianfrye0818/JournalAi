@@ -30,6 +30,7 @@ model User {
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
 
+    MonthlySummaries MonthlySummary[]
     Snippets      Snippet[]
     DailySessions DailySession[]
     Entries       Entry[]
@@ -129,4 +130,20 @@ model StyleProfile {
     User User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@map("style_profile")
+}
+
+// Durable delivery state; cached content keeps retry payloads identical for Resend.
+model MonthlySummary {
+    id String @id @default(uuid())
+    userId String
+    month String
+    subject String?
+    text String?
+    html String?
+    sentAt DateTime?
+    lockedUntil DateTime?
+    User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, month])
+    @@map("monthly_summary")
 }
