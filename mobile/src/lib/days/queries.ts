@@ -2,10 +2,13 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 
 import { daysApi, entriesApi, questionsApi } from '@/lib/api/days';
 import type { AnswerPayload, DayView, EntryPatch } from '@/lib/api/types';
+import { historyCache } from '@/lib/history/cache';
+import { refreshHistory } from '@/lib/history/queries';
 
 /**
  * Server state for the end-of-day flow. Every mutation writes its result into the cached day, so
- * Today, Days, and the flow screens all see the same status without refetching.
+ * Today, Days, and the flow screens all see the same status without refetching. Each day that
+ * comes back is also mirrored into SQLite (`historyCache`) so it can be read offline.
  */
 
 export const dayKeys = {
@@ -23,8 +26,18 @@ export const aiMutationKeys = {
   draft: (date: string) => ['days', 'draft', date] as const,
 };
 
+/** Mirroring is best effort: a failed cache write must never fail the request that fed it. */
+const mirror = (day: DayView | undefined) => {
+  if (day) historyCache.saveDay(day).catch((err) => console.warn('Caching day failed', err));
+};
+
+function setDay(client: QueryClient, date: string, day: DayView) {
+  client.setQueryData(dayKeys.detail(date), day);
+  mirror(day);
+}
+
 function patchDay(client: QueryClient, date: string, patch: (day: DayView) => DayView) {
-  client.setQueryData<DayView>(dayKeys.detail(date), (day) => (day ? patch(day) : day));
+  mirror(client.setQueryData<DayView>(dayKeys.detail(date), (day) => (day ? patch(day) : day)));
 }
 
 /** The list's status and title come from the day, so refresh it after any change to one. */
@@ -34,13 +47,18 @@ const invalidateList = (client: QueryClient) =>
 export function useDay(date: string, { enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: dayKeys.detail(date),
-    queryFn: () => daysApi.get(date),
+    queryFn: async () => {
+      const day = await daysApi.get(date);
+      mirror(day);
+      return day;
+    },
     enabled,
   });
 }
 
+/** Refreshes the cached history; read the days themselves through `useHistory`. */
 export function useDayList() {
-  return useQuery({ queryKey: dayKeys.list(), queryFn: daysApi.list });
+  return useQuery({ queryKey: dayKeys.list(), queryFn: refreshHistory });
 }
 
 export function useStartInterviewRound(date: string) {
@@ -105,7 +123,7 @@ export function useFinalizeDay(date: string) {
   return useMutation({
     mutationFn: () => daysApi.finalize(date),
     onSuccess: (day) => {
-      client.setQueryData(dayKeys.detail(date), day);
+      setDay(client, date, day);
       void invalidateList(client);
     },
   });
@@ -116,7 +134,7 @@ export function useReopenDay(date: string) {
   return useMutation({
     mutationFn: () => daysApi.reopen(date),
     onSuccess: (day) => {
-      client.setQueryData(dayKeys.detail(date), day);
+      setDay(client, date, day);
       void invalidateList(client);
     },
   });

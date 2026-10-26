@@ -131,7 +131,15 @@ export type DaySummary = {
   status: DayStatus;
   snippetCount: number;
   entryTitle: string | null;
+  /** When the entry last changed, if the day has one. */
+  entryUpdatedAt: string | null;
 };
+
+/** `SearchEntriesResponse` (GET /entries): an entry plus the day it belongs to. */
+export type EntryWithDate = Entry & { date: string };
+
+/** Query of `SearchEntriesRequest`. `from`/`to` are inclusive `YYYY-MM-DD`. */
+export type EntrySearchParams = { q?: string; from?: string; to?: string; limit?: number };
 
 /** Body of `AnswerQuestionRequest`: exactly one of the two. */
 export type AnswerPayload = { answer: string } | { skipped: true };

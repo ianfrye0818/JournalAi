@@ -2,11 +2,13 @@ import { Redirect, Stack, useLocalSearchParams } from 'expo-router';
 
 import { Fonts, Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { parseLocalDate } from '@/lib/dates';
 
 const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * The end-of-day flow for one journal day: review → interview → draft, plus the feedback sheet.
+ * One journal day: its page (`index`), the end-of-day flow review → interview → draft, and the
+ * feedback sheet.
  * Screens resume from the day's server status (see `stepForStatus`), so any of them can be first.
  */
 export default function DayLayout() {
@@ -25,6 +27,16 @@ export default function DayLayout() {
         headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: theme.background },
       }}>
+      <Stack.Screen
+        name="index"
+        options={{
+          title: parseLocalDate(date).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+        }}
+      />
       <Stack.Screen name="review" options={{ title: 'Review' }} />
       <Stack.Screen name="interview" options={{ title: 'A few questions' }} />
       <Stack.Screen name="draft" options={{ title: 'Your entry' }} />

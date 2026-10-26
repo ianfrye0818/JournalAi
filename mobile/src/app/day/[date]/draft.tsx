@@ -6,13 +6,13 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AiProgress, progressCopy } from '@/components/day/ai-progress';
+import { EntryTags } from '@/components/day/entry-tags';
 import { FLOW_FOOTER_HEIGHT, FlowFooter } from '@/components/day/flow-footer';
 import { describeError, RetryCard } from '@/components/day/retry-card';
 import { MarkdownView } from '@/components/markdown-view';
 import { ThemedText } from '@/components/themed-text';
 import { Button, TextField } from '@/components/ui';
-import { MaxContentWidth, Radius, Spacing, Typography } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { MaxContentWidth, Spacing, Typography } from '@/constants/theme';
 import type { Entry } from '@/lib/api/types';
 import { parseLocalDate } from '@/lib/dates';
 import {
@@ -115,7 +115,7 @@ export default function DraftScreen() {
           )}
         </View>
         <MarkdownView source={entry.body} />
-        {entry.tags.length > 0 && <Tags tags={entry.tags} />}
+        <EntryTags tags={entry.tags} />
       </ScrollView>
 
       <FlowFooter>
@@ -194,21 +194,6 @@ export default function DraftScreen() {
           </>
         )}
       </FlowFooter>
-    </View>
-  );
-}
-
-function Tags({ tags }: { tags: string[] }) {
-  const theme = useTheme();
-  return (
-    <View style={styles.tags} accessibilityLabel={`Tags: ${tags.join(', ')}`}>
-      {tags.map((tag) => (
-        <View key={tag} style={[styles.tag, { backgroundColor: theme.backgroundElement }]}>
-          <ThemedText type="small" themeColor="textSecondary">
-            #{tag}
-          </ThemedText>
-        </View>
-      ))}
     </View>
   );
 }
@@ -346,17 +331,6 @@ const styles = StyleSheet.create({
   },
   center: {
     textAlign: 'center',
-  },
-  tags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-    marginTop: Spacing.two,
-  },
-  tag: {
-    borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.two + Spacing.one,
-    paddingVertical: Spacing.one,
   },
   editor: {
     ...Typography.entry,

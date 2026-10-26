@@ -1,4 +1,4 @@
-import { DEFAULT_ROLLOVER_HOUR, formatLocalDate, localDate, parseLocalDate } from './dates';
+import { addDays, DEFAULT_ROLLOVER_HOUR, formatLocalDate, localDate, parseLocalDate } from './dates';
 
 // Dates are built from local parts, so these hold in any machine timezone.
 const at = (y: number, mo: number, d: number, h: number, mi = 0) => new Date(y, mo - 1, d, h, mi);
@@ -56,5 +56,17 @@ describe('formatLocalDate / parseLocalDate', () => {
 
   it('rejects malformed input', () => {
     expect(() => parseLocalDate('2026-2-28')).toThrow();
+  });
+});
+
+describe('addDays', () => {
+  it('crosses month and year boundaries', () => {
+    expect(addDays('2026-10-31', 1)).toBe('2026-11-01');
+    expect(addDays('2027-01-01', -1)).toBe('2026-12-31');
+  });
+
+  it('handles leap days', () => {
+    expect(addDays('2028-02-28', 1)).toBe('2028-02-29');
+    expect(addDays('2027-02-28', 1)).toBe('2027-03-01');
   });
 });

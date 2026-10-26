@@ -13,4 +13,12 @@ export class ListDaysResponse {
 
   @ApiProperty({ type: String, nullable: true })
   entryTitle!: string | null;
+
+  @ApiProperty({
+    type: Date,
+    nullable: true,
+    description:
+      'When the entry last changed; lets clients refresh only stale cached entries',
+  })
+  entryUpdatedAt!: Date | null;
 }

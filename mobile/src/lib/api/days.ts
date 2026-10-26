@@ -5,6 +5,8 @@ import type {
   DayView,
   Entry,
   EntryPatch,
+  EntrySearchParams,
+  EntryWithDate,
   InterviewRound,
   Question,
 } from '@/lib/api/types';
@@ -30,6 +32,15 @@ export const questionsApi = {
 };
 
 export const entriesApi = {
+  /** Newest day first. Without `q`, lists every entry in the range. */
+  search: (params: EntrySearchParams) => {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== '') query.set(key, String(value));
+    }
+    const qs = query.toString();
+    return api<EntryWithDate[]>(qs ? `/entries?${qs}` : '/entries');
+  },
   update: (id: string, body: EntryPatch) =>
     api<Entry>(`/entries/${encodeURIComponent(id)}`, { method: 'PATCH', body }),
 };

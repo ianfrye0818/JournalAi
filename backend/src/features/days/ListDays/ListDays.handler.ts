@@ -44,7 +44,7 @@ export class ListDaysHandler implements IQueryHandler<
       select: {
         date: true,
         status: true,
-        Entry: { select: { title: true } },
+        Entry: { select: { title: true, updatedAt: true } },
         _count: { select: { Snippets: { where: { deletedAt: null } } } },
       },
       orderBy: { date: 'desc' },
@@ -55,6 +55,7 @@ export class ListDaysHandler implements IQueryHandler<
       status: s.status,
       snippetCount: s._count.Snippets,
       entryTitle: s.Entry?.title ?? null,
+      entryUpdatedAt: s.Entry?.updatedAt ?? null,
     }));
   }
 }

@@ -62,3 +62,6 @@ export function nextInterviewAction(day: Pick<DayView, 'interviewRound' | 'quest
 /** Where to open a day's flow; `router.push(dayHref(date, stepForStatus(status)))` resumes it. */
 export const dayHref = (date: string, step: DayStep) =>
   ({ pathname: `/day/[date]/${step}`, params: { date } }) as const;
+
+/** The day's own page: its entry, snippets, and actions. */
+export const dayPageHref = (date: string) => ({ pathname: '/day/[date]', params: { date } }) as const;

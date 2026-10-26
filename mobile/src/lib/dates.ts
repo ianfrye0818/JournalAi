@@ -29,3 +29,9 @@ export function localDate(now: Date = new Date(), rolloverHour: number = DEFAULT
   // Build from calendar parts rather than subtracting 24h, which is wrong across DST changes.
   return formatLocalDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
 }
+
+/** Shifts a `YYYY-MM-DD` date by whole calendar days (negative goes back). */
+export function addDays(value: string, days: number): string {
+  const d = parseLocalDate(value);
+  return formatLocalDate(new Date(d.getFullYear(), d.getMonth(), d.getDate() + days));
+}

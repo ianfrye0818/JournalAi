@@ -37,6 +37,9 @@ export const days = sqliteTable('days', {
   status: text('status', { enum: dayStatuses }).notNull().default('open'),
   interviewRound: integer('interview_round').notNull().default(0),
   finalizedAt: integer('finalized_at', { mode: 'timestamp_ms' }),
+  entryTitle: text('entry_title'),
+  /** Server time of the entry's last change; a cached entry older than this is stale. */
+  entryUpdatedAt: integer('entry_updated_at', { mode: 'timestamp_ms' }),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
   /** When this row was last refreshed from the server. */
   fetchedAt: integer('fetched_at', { mode: 'timestamp_ms' }).notNull(),

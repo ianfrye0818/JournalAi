@@ -40,7 +40,10 @@ describe(ListDaysHandler, () => {
       {
         date: new Date('2026-10-26T00:00:00Z'),
         status: 'drafted',
-        Entry: { title: 'Coffee with Sam' },
+        Entry: {
+          title: 'Coffee with Sam',
+          updatedAt: new Date('2026-10-26T21:00:00Z'),
+        },
         _count: { Snippets: 3 },
       },
       {
@@ -66,8 +69,15 @@ describe(ListDaysHandler, () => {
         status: 'drafted',
         snippetCount: 3,
         entryTitle: 'Coffee with Sam',
+        entryUpdatedAt: new Date('2026-10-26T21:00:00Z'),
       },
-      { date: '2026-10-25', status: 'open', snippetCount: 1, entryTitle: null },
+      {
+        date: '2026-10-25',
+        status: 'open',
+        snippetCount: 1,
+        entryTitle: null,
+        entryUpdatedAt: null,
+      },
     ]);
   });
 
