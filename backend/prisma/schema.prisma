@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Snippet {
+  id         String   @id @default(uuid())
+  text       String
+  source     String   @default("text") // text | voice | share
+  capturedAt DateTime @default(now())
+  clientId   String   @unique // Generated on device, makes sync idempotent
+  mediaUrl   String?
+  sessionId  String?
+
+  Session DailySession? @relation(fields: [sessionId], references: [id])
+
+  @@map("snippet")
+}
+
+model DailySession {
+  id     String   @id @default(uuid())
+  date   DateTime @unique // local calendar date
+  status String   @default("open") // open | interviewing | drafted | finalized
+
+  Questions Question[]
+  Entry     Entry?
+  Snippets  Snippet[]
+
+  @@map("daily_session")
+}
+
+model Question {
+  id        String  @id @default(uuid())
+  sessionId String  @unique
+  text      String
+  answer    String?
+  skipped   Boolean @default(false)
+  order     Int
+
+  Session DailySession? @relation(fields: [sessionId], references: [id])
+
+  @@map("question")
+}
+
+model Entry {
+  id        String   @id @default(uuid())
+  sessionId String   @unique
+  body      String
+  aiDraft   String
+  flags     Json?
+  updatedAt DateTime @updatedAt
+
+  Session DailySession? @relation(fields: [sessionId], references: [id])
+}
+
+model StyleProfile {
+  id      String  @id @default(uuid())
+  samples String // a few of your past entries
+  notes   String? // "first person, dry humor, no emojis"
+}
