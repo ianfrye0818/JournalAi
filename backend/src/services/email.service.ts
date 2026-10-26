@@ -22,7 +22,10 @@ export class EmailService {
 
   async sendEmail(props: EmailProps): Promise<void> {
     const to = Array.isArray(props.to) ? props.to : [props.to];
-    if (!to.length || to.some((email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+    if (
+      !to.length ||
+      to.some((email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    ) {
       throw new Error('Invalid email recipient');
     }
     const response = await fetch('https://api.resend.com/emails', {
@@ -31,7 +34,9 @@ export class EmailService {
       headers: {
         Authorization: `Bearer ${this.config.get('RESEND_API_KEY')}`,
         'Content-Type': 'application/json',
-        ...(props.idempotencyKey ? { 'Idempotency-Key': props.idempotencyKey } : {}),
+        ...(props.idempotencyKey
+          ? { 'Idempotency-Key': props.idempotencyKey }
+          : {}),
       },
       body: JSON.stringify({
         from: props.from ?? this.config.get('FROM_EMAIL'),

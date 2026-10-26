@@ -32,6 +32,9 @@ import { GlobalServicesModule } from './services/globalservices.module';
     StyleProfileModule,
   ],
   controllers: [],
-  providers: [MonthlySummaryService, { provide: APP_GUARD, useClass: AuthGuard }],
+  providers: [
+    MonthlySummaryService,
+    { provide: APP_GUARD, useClass: AuthGuard },
+  ],
 })
 export class AppModule {}

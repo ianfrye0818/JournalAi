@@ -96,3 +96,42 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Monthly journal email
+
+EmailService uses the Resend HTTP API with `RESEND_API_KEY` and `FROM_EMAIL`.
+Set `FROM_EMAIL` to an address on your verified Resend domain. For initial testing,
+Resend's `onboarding@resend.dev` sender can send to your Resend account address.
+See [Resend's sending API](https://resend.com/docs/api-reference/emails/send-email).
+
+To enable your personal recap, set `MONTHLY_SUMMARY_EMAIL` in `backend/.env` to
+**your existing JournalAI account email**, and restart the backend. No other
+account is included or emailed. Missing recipient configuration disables the job.
+
+Apply the database migration before starting the updated server:
+
+```bash
+npx prisma migrate deploy
+npm run build
+```
+
+The in-process cron checks hourly, becoming due at 9am on the first day of the
+month in the journal account's timezone. It summarizes the previous calendar
+month using session dates (including the account's journal day rollover rules).
+The backend must be running; downtime is caught up on the next hourly check in
+the same month. Older missed months are not backfilled automatically.
+
+Recaps include nondeleted snippet counts, days with snippets or an entry,
+finalized entries, longest streak within the month, AI summary, tentative mood,
+themes, highlights, and a reflection question. Months without content are skipped.
+Exact counts cover all records; AI input uses at most 6,000 characters per day
+and 100,000 total, with an excerpt notice when truncated.
+
+Database leases coordinate replicas; generated email content is cached before
+sending and successful delivery is recorded. Failures retry hourly using the
+same Resend idempotency key and payload. Resend keeps idempotency keys for 24
+hours; a crash after provider acceptance but before recording success can cause
+a duplicate if recovery occurs after that window. Retained email content is
+removed when the owning account is deleted.
+
+Tests mock email and AI providers; they do not send real journal emails.
