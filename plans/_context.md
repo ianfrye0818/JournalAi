@@ -41,7 +41,10 @@ Phase 1: Android APK through EAS (preview profile). Later: Play Store, App Store
 - Global services: Prisma, Redis, Config, Email, AppLogger (`src/services/`).
 - `AuthGuard` + `@Public()` (session-based; Task 02 replaces it). Not registered globally.
 - Stub modules: snippets, days, entries, questions, transcribe (transcribe is removed in Task 01), health.
-- Mobile is the Expo starter template (tabs: index, explore).
+- Mobile shell (after Task 03): `(tabs)` Today/Days/Settings, `(auth)/sign-in` stub, UI kit in `src/components/ui/`, `eas.json`.
+- Local DB (after Task 05): `src/lib/db/` (drizzle schema/client/migrations; `npm run db:generate`), `src/lib/dates.ts`
+  (`localDate`), `src/lib/snippets/repo.ts` (`snippetsRepo`, `useSnippetsByDate`), kv settings in `src/lib/settings.ts`,
+  `capture` modal route. Sign-out does not wipe SQLite yet (Task 07 flushes the outbox, then `clearLocalData()`).
 
 ## Gotchas
 - Path aliases: Nest CLI rewrites them at build time, but Jest does not → `jest.moduleNameMapper` is required.
