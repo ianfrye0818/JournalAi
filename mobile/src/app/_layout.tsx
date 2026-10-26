@@ -88,6 +88,9 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={signedIn} redirectTo="/sign-in">
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="settings/style" />
+        <Stack.Screen name="settings/day" />
+        <Stack.Screen name="settings/reminder" />
         <Stack.Screen name="capture" options={{ presentation: 'modal' }} />
         <Stack.Screen name="day/[date]" />
       </Stack.Protected>

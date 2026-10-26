@@ -1,5 +1,11 @@
+import { UpdateMeCommand } from './UpdateMe/UpdateMe.command';
+import { UpdateMeRequest } from './UpdateMe/UpdateMe.request';
+import { UpdateMeResponse } from './UpdateMe/UpdateMe.response';
+import { DeleteAccountCommand } from './DeleteAccount/DeleteAccount.command';
 import {
   Body,
+  Patch,
+  Delete,
   Controller,
   Get,
   HttpCode,
@@ -77,5 +83,20 @@ export class AuthController {
   @ApiOkResponse({ type: GetMeResponse })
   me(@CurrentUser() user: AuthUser): Promise<GetMeResponse> {
     return this.queryBus.execute(new GetMeQuery(user.id));
+  }
+  @Patch('me')
+  @ApiOkResponse({ type: UpdateMeResponse })
+  updateMe(
+    @CurrentUser() user: AuthUser,
+    @Body() body: UpdateMeRequest,
+  ): Promise<UpdateMeResponse> {
+    return this.commandBus.execute(new UpdateMeCommand(user.id, body));
+  }
+
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse()
+  deleteAccount(@CurrentUser() user: AuthUser): Promise<void> {
+    return this.commandBus.execute(new DeleteAccountCommand(user.id));
   }
 }

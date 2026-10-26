@@ -7,14 +7,14 @@ Last updated: 2026-10-26 (end of session). To resume, open a new thread with `pl
 | Task | Status |
 | --- | --- |
 | 01–11 (foundation, auth, capture, voice, sync, AI interview, draft/finalize, end-of-day flow, history/search) | Done, committed (latest `b1a4a8e`) |
-| 12 Markdown export | Code complete, **uncommitted**, not yet tested on a device |
-| 13 Settings: style, rollover, reminders, account | Not started (some backend groundwork exists) |
+| 12 Markdown export | Committed (`59dff34`), not yet tested on a device |
+| 13 Settings: style, rollover, reminders, account | Code complete, uncommitted; device/live-server acceptance pending |
 | 14 Deploy backend & ship APK | Not started |
 | 15 Backlog | Unscheduled |
 
 ## Task 12: what's done
 
-The Task 12 code is in the working tree and hasn't been committed. Typecheck and lint are clean, and all 95 mobile tests pass.
+The Task 12 code was committed as `59dff34`. Typecheck and lint are clean, and all 95 mobile tests pass.
 
 - `mobile/src/lib/export/`
   - `markdown.ts`: frontmatter, title, body, optional `## Snippets`, and the filename template (default `YYYY-MM-DD`).
@@ -45,22 +45,26 @@ The Task 12 code is in the working tree and hasn't been committed. Typecheck and
 - **Files are matched by name from the decoded URI.** This works for vaults on phone storage, but not for cloud providers with opaque IDs.
 - **The month zip only includes finalized days.**
 
-## Next: Task 13 (`plans/tasks/13-settings-style-reminders.md`)
+## Task 13: what's done
 
-Already in place:
-- **Backend:** `style-profile` has a Get feature and an Upsert feature (`PUT /style-profile`).
-- **Backend auth:** has GetMe, Login, Logout, and Register. **Still missing: `UpdateMe` (`PATCH /auth/me`) and `DeleteAccount` (`DELETE /auth/me`).** Generate them with `cqrs-gen`, as the task file says.
-- **Mobile:** `src/lib/settings.ts` has `getRolloverHour` / `useRolloverHour` / `setRolloverHour`, and the `kv` table holds settings.
+- Generated and implemented `UpdateMe` (`PATCH /auth/me`) and `DeleteAccount` (`DELETE /auth/me`).
+- Rollover hour is validated as an integer from 0–23; timezone is validated as an IANA timezone.
+- Deletion revokes all Redis tokens, then deletes the user. All user-owned Prisma relations already have `onDelete: Cascade`; no schema migration was needed. If Redis fails, data is retained. If the database fails after revocation, sign in again to retry.
+- Added protected Settings sub-screens for writing style, rollover/timezone, and evening reminders, alongside the existing export card.
+- Writing style loads/saves samples and notes through `/style-profile`. The existing draft handler already includes them in its system prompt.
+- Rollover saves to the server and local kv; login and cold-start profile refresh also restore the server value. Existing snippets keep their date. Capture dates remain based on the device's local calendar, as designed.
+- Added `expo-notifications` and its config plugin. Reminders use one stable daily notification ID, an Android channel, notification permission checks, and a chosen local HH:MM time. Turn off cancels it. Android delivery uses best-effort timing and may be delayed by battery settings.
+- Sign-out cancels the reminder. Confirmed account deletion stops and waits for sync, deletes the server account, then clears local journal data, token, and query cache. Exported vault files remain untouched.
+- Verification: mobile typecheck + lint clean, **99 tests pass**; backend typecheck + auth lint clean, **92 tests pass**. New tests cover profile validation/scoping, token revocation/deletion, and reminder scheduling/permission/disable behavior.
 
-Still to do:
-- **Settings rows are hardcoded.** "New day starts at 4:00 AM" and "Writing style: Not set" in `src/app/(tabs)/settings.tsx` aren't wired up yet.
-- **Sub-screens:**
-  - writing style (paste 1–3 entries plus notes)
-  - rollover hour and timezone, which syncs to the server and the local kv
-  - evening reminder (`expo-notifications`; needs an Android channel; check the v58 docs)
-  - account deletion
-- **Account deletion must cascade.** Every model has a `userId` relation, so check `onDelete: Cascade` in the schema. Also clear the Redis tokens and wipe local data.
-- **New Export card in Settings.** The new screens should sit alongside the "Obsidian export" card added in Task 12.
+### Before calling Task 13 fully accepted
+
+1. Rebuild the development client for the new notifications native module.
+2. On Android, enable a reminder a few minutes ahead; check foreground/background delivery, changed time, turn off, and sign-out cancellation.
+3. Save distinct style notes, generate the next draft, and confirm the writing changes.
+4. Change rollover/timezone, relaunch/sign in, and confirm the setting persists and new snippets use the expected day.
+5. With a disposable account on a live server, delete it; verify every related database row and Redis token is removed, local data is cleared, and the old token is rejected. Unit tests use mocks; live cascade deletion has not been exercised here.
+6. Commit Task 13 when reviewed.
 
 ## Then: Task 14 (`plans/tasks/14-deploy-and-apk.md`)
 - No `backend/Dockerfile` yet.

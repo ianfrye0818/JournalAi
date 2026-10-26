@@ -208,6 +208,9 @@ export function createSyncEngine({
       setState({ phase: 'idle', lastSyncedAt: null });
     },
 
+    /** Wait for the current run after stopping triggers, before erasing local data. */
+    settle,
+
     sync,
 
     /** Call after every local snippet write; pushes once writes go quiet. */

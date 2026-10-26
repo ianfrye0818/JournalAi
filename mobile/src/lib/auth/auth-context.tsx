@@ -1,8 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 
+import { setRolloverHour } from '@/lib/settings';
+import { cancelReminder } from '@/lib/reminders';
 import { authApi } from '@/lib/api/auth';
-import { setAuthToken, setUnauthorizedHandler } from '@/lib/api/client';
+import { api, setAuthToken, setUnauthorizedHandler } from '@/lib/api/client';
 import type { Credentials, User } from '@/lib/api/types';
 import { tokenStore } from '@/lib/auth/token-store';
 import { clearLocalData } from '@/lib/db/client';
@@ -17,6 +19,8 @@ type AuthContextValue = {
   signIn: (credentials: Credentials) => Promise<void>;
   signUp: (credentials: Credentials) => Promise<void>;
   signOut: () => Promise<void>;
+  updateProfile: (patch: { dayRolloverHour: number; timezone: string }) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -30,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSession = async ({ revoke }: { revoke: boolean }) => {
     // A deliberate sign-out pushes the outbox first. After a 401 the token is already dead.
     const flushed = revoke ? await syncEngine.flush() : false;
+    await cancelReminder();
     syncEngine.stop();
     // `api` reads the token synchronously, so logout still carries it even though we null it next.
     if (revoke) authApi.logout().catch(() => {});
@@ -50,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await setSyncOwner(nextUser.id);
     await tokenStore.set(token);
     setAuthToken(token);
+    await setRolloverHour(nextUser.dayRolloverHour);
     setUser(nextUser);
     setStatus('signedIn');
     // Pulls everything after the cursor; on a fresh install that restores every snippet.
@@ -74,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const me = await authApi.me();
         if (cancelled) return;
+        await setRolloverHour(me.dayRolloverHour);
         setUser(me);
         // Installs signed in before sync existed have no owner yet.
         if (!(await getSyncOwner())) await setSyncOwner(me.id);
@@ -103,6 +110,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await startSession(res.token, res.user);
     },
     signOut: () => clearSession({ revoke: true }),
+    updateProfile: async (patch) => {
+      const next = await api<User>('/auth/me', {
+        method: 'PATCH',
+        body: patch,
+      });
+      await setRolloverHour(next.dayRolloverHour);
+      setUser(next);
+    },
+    deleteAccount: async () => {
+      await syncEngine.flush();
+      syncEngine.stop();
+      await syncEngine.settle();
+      try {
+        await api<void>('/auth/me', { method: 'DELETE' });
+      } catch (error) {
+        syncEngine.start();
+        throw error;
+      }
+      await cancelReminder();
+      await clearLocalData();
+      await tokenStore.clear();
+      setAuthToken(null);
+      setUser(null);
+      queryClient.clear();
+      setStatus('signedOut');
+    },
   };
 
   return <AuthContext value={value}>{children}</AuthContext>;

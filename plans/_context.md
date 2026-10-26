@@ -59,6 +59,8 @@ Phase 1: Android APK through EAS (preview profile). Later: Play Store, App Store
   → confirm before replacing a file edited in Obsidian), `share.ts`/`zip.ts` (share one day / zip a month),
   `actions.ts` (dialogs; `autoExportFinalized` runs from `useFinalizeDay`). Prefs in kv `settings.export.*`.
 
+- Settings (after Task 13): `PATCH /api/auth/me` updates timezone/rollover; `DELETE /api/auth/me` revokes all tokens and cascades user data. Mobile `src/app/settings/` has style/day/reminder screens; `src/lib/reminders.ts` owns a daily local notification and Android channel. Profile refresh restores rollover into local kv; account deletion drains sync before wiping local data. Reminders use phone-local best-effort delivery and are cancelled on sign-out/deletion.
+
 ## Gotchas
 - Path aliases: Nest CLI rewrites them at build time, but Jest does not → `jest.moduleNameMapper` is required.
 - After any schema change, run `npm run db:generate`. The generated client is gitignored.

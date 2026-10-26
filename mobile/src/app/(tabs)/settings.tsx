@@ -1,3 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api/client';
+import { router } from 'expo-router';
+import { useRolloverHour } from '@/lib/settings';
 import Constants from 'expo-constants';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
@@ -22,8 +26,14 @@ function SettingRow({ icon, label, value }: { icon: IconName; label: string; val
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const style = useQuery({
+    queryKey: ['style-profile'],
+    queryFn: () => api<{ samples: string; notes: string | null } | null>('/style-profile'),
+  });
+  const hour = useRolloverHour();
+  const [deleting, setDeleting] = useState(false);
   const pending = usePendingSnippetCount();
 
   const confirmSignOut = () => {
@@ -50,14 +60,22 @@ export default function SettingsScreen() {
           Account
         </ThemedText>
         <SettingRow
-          icon={{ ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' }}
+          icon={{
+            ios: 'person.crop.circle',
+            android: 'account_circle',
+            web: 'account_circle',
+          }}
           label="Signed in as"
           value={user?.email ?? '…'}
         />
         <Button
           title="Sign out"
           variant="secondary"
-          icon={{ ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' }}
+          icon={{
+            ios: 'rectangle.portrait.and.arrow.right',
+            android: 'logout',
+            web: 'logout',
+          }}
           loading={signingOut}
           onPress={confirmSignOut}
         />
@@ -68,19 +86,75 @@ export default function SettingsScreen() {
           Journal
         </ThemedText>
         <SettingRow
-          icon={{ ios: 'moon.stars', android: 'wb_twilight', web: 'wb_twilight' }}
+          icon={{
+            ios: 'moon.stars',
+            android: 'wb_twilight',
+            web: 'wb_twilight',
+          }}
           label="New day starts at"
-          value="4:00 AM"
+          value={`${String(hour).padStart(2, '0')}:00`}
         />
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <SettingRow
           icon={{ ios: 'textformat', android: 'edit_note', web: 'edit_note' }}
           label="Writing style"
-          value="Not set"
+          value={
+            style.isPending
+              ? '…'
+              : style.isError
+                ? 'Unavailable'
+                : style.data?.samples || style.data?.notes
+                  ? 'Personalized'
+                  : 'Not set'
+          }
         />
       </Card>
 
+      <Card>
+        <Button
+          title="Writing style"
+          variant="secondary"
+          onPress={() => router.push('/settings/style')}
+        />
+        <Button
+          title="Day rollover & timezone"
+          variant="secondary"
+          onPress={() => router.push('/settings/day')}
+        />
+        <Button
+          title="Evening reminder"
+          variant="secondary"
+          onPress={() => router.push('/settings/reminder')}
+        />
+      </Card>
       <ExportSettingsCard />
+      <Button
+        title="Delete account"
+        variant="secondary"
+        loading={deleting}
+        onPress={() =>
+          Alert.alert(
+            'Permanently delete account?',
+            'This removes all journal data from the server and this phone, including unsynced snippets. Exported files remain in your vault. This cannot be undone.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Delete account',
+                style: 'destructive',
+                onPress: async () => {
+                  setDeleting(true);
+                  try {
+                    await deleteAccount();
+                  } catch (e) {
+                    Alert.alert('Could not delete account', (e as Error).message);
+                    setDeleting(false);
+                  }
+                },
+              },
+            ],
+          )
+        }
+      />
 
       <ThemedText type="small" themeColor="textTertiary" style={styles.version}>
         JournalAI {Constants.expoConfig?.version}
