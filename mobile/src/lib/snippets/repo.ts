@@ -6,10 +6,11 @@ import { db } from '@/lib/db/client';
 import { snippets, type Snippet, type SnippetSource } from '@/lib/db/schema';
 import { localDate } from '@/lib/dates';
 import { getRolloverHour } from '@/lib/settings';
+import { syncEngine } from '@/lib/sync';
 
 /**
  * Local snippet writes. Every change bumps `updatedAt` and leaves `syncedAt` behind it, which is
- * how the sync engine (Task 07) finds what to push. Deletes are soft so they can sync too.
+ * how the sync engine finds what to push. Deletes are soft so they can sync too.
  */
 export const snippetsRepo = {
   async add(text: string, { source = 'text' }: { source?: SnippetSource } = {}): Promise<Snippet> {
@@ -27,6 +28,7 @@ export const snippetsRepo = {
         updatedAt: now,
       })
       .returning();
+    syncEngine.notifyLocalChange();
     return row;
   },
 
@@ -38,6 +40,7 @@ export const snippetsRepo = {
       .update(snippets)
       .set({ text: body, updatedAt: new Date() })
       .where(and(eq(snippets.clientId, clientId), isNull(snippets.deletedAt)));
+    syncEngine.notifyLocalChange();
   },
 
   async remove(clientId: string) {
@@ -46,6 +49,7 @@ export const snippetsRepo = {
       .update(snippets)
       .set({ deletedAt: now, updatedAt: now })
       .where(and(eq(snippets.clientId, clientId), isNull(snippets.deletedAt)));
+    syncEngine.notifyLocalChange();
   },
 
   /** Live (non-deleted) snippets for a day, oldest first. */

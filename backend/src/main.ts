@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import {
@@ -13,12 +14,14 @@ import { ConfigService } from './services/configService/config.service';
 const logger = new AppLogger('JournalAI');
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     snapshot: true,
     forceCloseConnections: true,
   });
 
   app.setGlobalPrefix('api');
+  // Snippet sync batches (up to 200 snippets) outgrow the 100kb default.
+  app.useBodyParser('json', { limit: '2mb' });
 
   const configService = app.get(ConfigService);
   const port = configService.get('PORT') ?? 3000;

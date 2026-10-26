@@ -1,15 +1,20 @@
 import { type Ref } from 'react';
 import { StyleSheet, TextInput, View, type TextInputInstance } from 'react-native';
 
+import { DictationNotice } from '@/components/capture/dictation-notice';
+import { MicButton } from '@/components/capture/mic-button';
 import { ThemedText } from '@/components/themed-text';
 import { Button, IconButton } from '@/components/ui';
 import { Radius, Spacing, Typography } from '@/constants/theme';
+import type { Dictation } from '@/hooks/use-dictation';
 import { useTheme } from '@/hooks/use-theme';
 
 export type SnippetComposerProps = {
   value: string;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
+  /** Adds a mic button; the box is read-only while it's listening. */
+  dictation?: Dictation;
   /** Shows an "Editing" bar with a cancel action. */
   editing?: boolean;
   onCancelEdit?: () => void;
@@ -20,12 +25,14 @@ export function SnippetComposer({
   value,
   onChangeText,
   onSubmit,
+  dictation,
   editing = false,
   onCancelEdit,
   inputRef,
 }: SnippetComposerProps) {
   const theme = useTheme();
   const canSubmit = value.trim().length > 0;
+  const listening = !!dictation?.active;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -37,12 +44,14 @@ export function SnippetComposer({
           <Button title="Cancel" variant="ghost" onPress={onCancelEdit} />
         </View>
       )}
+      {dictation && <DictationNotice dictation={dictation} />}
       <View style={styles.row}>
         <TextInput
           ref={inputRef}
           value={value}
           onChangeText={onChangeText}
-          placeholder="What's happening?"
+          editable={!listening}
+          placeholder={listening ? 'Listening…' : "What's happening?"}
           accessibilityLabel={editing ? 'Edit snippet' : 'New snippet'}
           placeholderTextColor={theme.textTertiary}
           selectionColor={theme.accent}
@@ -51,6 +60,9 @@ export function SnippetComposer({
           textAlignVertical="center"
           style={[styles.input, Typography.default, { color: theme.text }]}
         />
+        {dictation && (
+          <MicButton status={dictation.status} level={dictation.level} onPress={dictation.toggle} />
+        )}
         <IconButton
           icon={
             editing

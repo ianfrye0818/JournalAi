@@ -1,12 +1,13 @@
 import Constants from 'expo-constants';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Icon, Screen, type IconName } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth/auth-context';
+import { usePendingSnippetCount } from '@/lib/sync';
 
 function SettingRow({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
@@ -22,6 +23,24 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const { user, signOut } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const pending = usePendingSnippetCount();
+
+  const confirmSignOut = () => {
+    const doSignOut = () => {
+      setSigningOut(true);
+      signOut();
+    };
+    if (pending === 0) return doSignOut();
+    const noun = pending === 1 ? '1 snippet hasn’t' : `${pending} snippets haven’t`;
+    Alert.alert(
+      `${noun} synced yet`,
+      'We’ll try to upload them first. If that fails, they stay on this phone until you sign back in to this account.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign out', style: 'destructive', onPress: doSignOut },
+      ],
+    );
+  };
 
   return (
     <Screen title="Settings">
@@ -39,10 +58,7 @@ export default function SettingsScreen() {
           variant="secondary"
           icon={{ ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' }}
           loading={signingOut}
-          onPress={() => {
-            setSigningOut(true);
-            signOut();
-          }}
+          onPress={confirmSignOut}
         />
       </Card>
 

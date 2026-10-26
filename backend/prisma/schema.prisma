@@ -45,7 +45,9 @@ model Snippet {
     text       String
     source     SnippetSource @default(text)
     capturedAt DateTime // set by the device, not the server
-    updatedAt  DateTime      @updatedAt
+    // Device clock of the last edit. Sync keeps the newest copy (last write wins).
+    clientUpdatedAt DateTime
+    updatedAt  DateTime      @updatedAt // server clock; the cursor for GET /snippets?since=
     deletedAt  DateTime?
     sessionId  String
     userId     String

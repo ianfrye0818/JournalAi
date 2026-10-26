@@ -39,7 +39,14 @@
         }
       ],
       "expo-secure-store",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "JournalAI uses the microphone so you can dictate snippets. Audio is never saved.",
+          "speechRecognitionPermission": "JournalAI turns your speech into text so you can dictate snippets."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

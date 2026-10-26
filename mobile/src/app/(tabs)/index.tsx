@@ -5,9 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SnippetCard } from '@/components/snippet-card';
 import { SnippetComposer } from '@/components/snippet-composer';
+import { SyncStatus } from '@/components/sync-status';
 import { ThemedText } from '@/components/themed-text';
 import { Card, EmptyState } from '@/components/ui';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useDictation } from '@/hooks/use-dictation';
 import { useLocalDate } from '@/hooks/use-local-date';
 import { useTheme } from '@/hooks/use-theme';
 import type { Snippet } from '@/lib/db/schema';
@@ -24,6 +26,7 @@ export default function TodayScreen() {
   const listRef = useRef<FlatList<Snippet>>(null);
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState<Snippet | null>(null);
+  const dictation = useDictation({ value: draft, onChangeText: setDraft });
 
   // On iOS the screen runs under the tab bar; on Android native tabs already inset it. Either way,
   // the keyboard covers the tab bar, so the composer only needs to clear it while the keyboard is down.
@@ -37,6 +40,8 @@ export default function TodayScreen() {
   });
 
   const cancelEdit = () => {
+    dictation.cancel();
+    dictation.reset();
     setEditing(null);
     setDraft('');
   };
@@ -44,15 +49,18 @@ export default function TodayScreen() {
   const submit = async () => {
     const text = draft.trim();
     if (!text) return;
+    // Save what's on screen; a late final result shouldn't refill the box after it clears.
+    dictation.cancel();
     try {
       if (editing) {
         await snippetsRepo.edit(editing.clientId, text);
         setEditing(null);
       } else {
-        await snippetsRepo.add(text);
+        await snippetsRepo.add(text, { source: dictation.dictated ? 'voice' : 'text' });
         requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
       }
       setDraft('');
+      dictation.reset();
       haptics.success();
     } catch {
       Alert.alert("Couldn't save snippet", 'Your text is still in the box. Try again.');
@@ -108,11 +116,14 @@ export default function TodayScreen() {
                 Today
               </ThemedText>
             </View>
-            {count > 0 && (
-              <ThemedText type="small" themeColor="textSecondary">
-                {count === 1 ? '1 snippet' : `${count} snippets`}
-              </ThemedText>
-            )}
+            <View style={styles.headerMeta}>
+              <SyncStatus />
+              {count > 0 && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {count === 1 ? '1 snippet' : `${count} snippets`}
+                </ThemedText>
+              )}
+            </View>
           </View>
         }
         ListEmptyComponent={
@@ -152,6 +163,7 @@ export default function TodayScreen() {
             value={draft}
             onChangeText={setDraft}
             onSubmit={submit}
+            dictation={dictation}
             editing={!!editing}
             onCancelEdit={cancelEdit}
           />
@@ -185,6 +197,10 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     gap: Spacing.one,
+  },
+  headerMeta: {
+    alignItems: 'flex-end',
+    gap: Spacing.half,
   },
   composer: {
     width: '100%',

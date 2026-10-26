@@ -1,11 +1,15 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DictationNotice } from '@/components/capture/dictation-notice';
+import { MicButton } from '@/components/capture/mic-button';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui';
 import { MaxContentWidth, Spacing, Typography } from '@/constants/theme';
+import { useDictation } from '@/hooks/use-dictation';
 import { useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
 import { snippetsRepo } from '@/lib/snippets/repo';
@@ -19,17 +23,22 @@ export default function CaptureScreen() {
   const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
+  const dictation = useDictation({ value: text, onChangeText: setText });
+  const listening = dictation.active;
+  const bottomPadding = insets.bottom + Spacing.three;
 
   const close = () => {
+    dictation.cancel();
     if (router.canGoBack()) router.back();
     else router.replace('/');
   };
 
   const save = async () => {
     if (!text.trim()) return;
+    dictation.cancel();
     setSaving(true);
     try {
-      await snippetsRepo.add(text);
+      await snippetsRepo.add(text, { source: dictation.dictated ? 'voice' : 'text' });
       haptics.success();
       close();
     } catch {
@@ -46,7 +55,7 @@ export default function CaptureScreen() {
           backgroundColor: theme.background,
           // iOS sheets start below the status bar; Android modals are full screen.
           paddingTop: process.env.EXPO_OS === 'ios' ? Spacing.three : insets.top + Spacing.two,
-          paddingBottom: insets.bottom + Spacing.three,
+          paddingBottom: bottomPadding,
           paddingLeft: insets.left + Spacing.three,
           paddingRight: insets.right + Spacing.three,
         },
@@ -64,7 +73,8 @@ export default function CaptureScreen() {
           multiline
           value={text}
           onChangeText={setText}
-          placeholder="What's happening?"
+          editable={!listening}
+          placeholder={listening ? 'Listening…' : "What's happening?"}
           accessibilityLabel="New snippet"
           placeholderTextColor={theme.textTertiary}
           selectionColor={theme.accent}
@@ -72,6 +82,17 @@ export default function CaptureScreen() {
           textAlignVertical="top"
           style={[styles.input, Typography.entry, { color: theme.text }]}
         />
+        <KeyboardStickyView offset={{ opened: bottomPadding - Spacing.three }}>
+          <DictationNotice dictation={dictation} />
+          <View style={styles.toolbar}>
+            <MicButton
+              size={56}
+              status={dictation.status}
+              level={dictation.level}
+              onPress={dictation.toggle}
+            />
+          </View>
+        </KeyboardStickyView>
       </View>
     </View>
   );
@@ -95,5 +116,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+  },
+  toolbar: {
+    alignItems: 'center',
+    paddingVertical: Spacing.two,
   },
 });

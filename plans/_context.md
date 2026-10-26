@@ -44,7 +44,12 @@ Phase 1: Android APK through EAS (preview profile). Later: Play Store, App Store
 - Mobile shell (after Task 03): `(tabs)` Today/Days/Settings, `(auth)/sign-in` stub, UI kit in `src/components/ui/`, `eas.json`.
 - Local DB (after Task 05): `src/lib/db/` (drizzle schema/client/migrations; `npm run db:generate`), `src/lib/dates.ts`
   (`localDate`), `src/lib/snippets/repo.ts` (`snippetsRepo`, `useSnippetsByDate`), kv settings in `src/lib/settings.ts`,
-  `capture` modal route. Sign-out does not wipe SQLite yet (Task 07 flushes the outbox, then `clearLocalData()`).
+  `capture` modal route.
+- Snippet sync (after Task 07): `POST /api/snippets/batch`, `GET /api/snippets?since&afterId` (backend
+  `src/features/snippets/`). `Snippet.clientUpdatedAt` is the device clock used for last-write-wins; `updatedAt`
+  is the server clock and the pull cursor. Mobile `src/lib/sync/` (`syncEngine`, started/stopped by the auth
+  context; `snippetsRepo` writes call `notifyLocalChange()`). Sign-out flushes, then wipes only if the outbox is
+  empty; kv `sync.ownerId` wipes leftovers when a different account signs in.
 
 ## Gotchas
 - Path aliases: Nest CLI rewrites them at build time, but Jest does not → `jest.moduleNameMapper` is required.

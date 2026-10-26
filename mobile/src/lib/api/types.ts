@@ -32,3 +32,40 @@ export type ApiErrorBody = {
   message: string | string[];
   error?: string;
 };
+
+/** One item of `SyncSnippetsRequest` (POST /snippets/batch). */
+export type SnippetPayload = {
+  clientId: string;
+  text: string;
+  source: 'text' | 'voice' | 'share';
+  capturedAt: string;
+  localDate: string;
+  /** Device clock of the last edit; the server keeps the newest. */
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
+/** `SyncSnippetResult.status`. Every status means the server has seen this version. */
+export type SnippetSyncStatus = 'created' | 'updated' | 'unchanged' | 'stale';
+
+/** `SyncSnippetsResponse` */
+export type SyncSnippetsResponse = {
+  results: { clientId: string; id: string; status: SnippetSyncStatus }[];
+};
+
+/** `SnippetResponse` */
+export type RemoteSnippet = Omit<SnippetPayload, 'deletedAt'> & {
+  id: string;
+  deletedAt: string | null;
+  /** Server clock of the last change; the pull cursor. */
+  serverUpdatedAt: string;
+};
+
+/** `GetSnippetsSinceResponse` (GET /snippets) */
+export type GetSnippetsSinceResponse = {
+  snippets: RemoteSnippet[];
+  hasMore: boolean;
+};
+
+/** Where the last pull stopped: the last snippet's `serverUpdatedAt` and `id`. */
+export type PullCursor = { since: string; afterId: string };
