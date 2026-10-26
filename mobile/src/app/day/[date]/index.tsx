@@ -38,7 +38,7 @@ export default function DayPage() {
   const [showSnippets, setShowSnippets] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const entry: Pick<Entry, 'title' | 'body' | 'tags'> | null = day.data?.entry ?? cached.entry ?? null;
+  const entry: Pick<Entry, 'title' | 'body' | 'tags' | 'mood'> | null = day.data?.entry ?? cached.entry ?? null;
   const status: DayStatus = day.data?.status ?? cached.day?.status ?? 'open';
   // Snippets live on the device; until a fresh install's first pull lands, use the server's copy.
   const snippets =
@@ -117,7 +117,7 @@ export default function DayPage() {
         {entry ? (
           <>
             <MarkdownView source={entry.body} />
-            <EntryTags tags={entry.tags} />
+            <EntryTags tags={entry.tags} mood={entry.mood} />
             {snippets.length > 0 && (
               <View style={styles.snippetToggle}>
                 <Chip

@@ -38,15 +38,22 @@ class SnippetWidgetProvider : AppWidgetProvider() {
       views.setTextViewText(R.id.snippet_widget_count, if (count != null)
         context.resources.getQuantityString(R.plurals.snippet_widget_count, count, count)
         else context.getString(R.string.snippet_widget_open))
+      val type = captureIntent(context, 0, "journalai://capture")
+      views.setOnClickPendingIntent(R.id.snippet_widget_add, type)
+      views.setOnClickPendingIntent(R.id.snippet_widget_root, type)
+      views.setOnClickPendingIntent(R.id.snippet_widget_dictate,
+        captureIntent(context, 1, "journalai://capture?dictate=1"))
+      manager.updateAppWidget(ids, views)
+    }
+
+    /** Distinct request codes keep the two buttons' PendingIntents from replacing each other. */
+    private fun captureIntent(context: Context, requestCode: Int, uri: String): PendingIntent {
       // Explicit package prevents another app from intercepting the journalai scheme.
-      val capture = Intent(Intent.ACTION_VIEW, Uri.parse("journalai://capture"))
+      val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
         .setPackage(context.packageName)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-      val action = PendingIntent.getActivity(context, 0, capture,
+      return PendingIntent.getActivity(context, requestCode, intent,
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-      views.setOnClickPendingIntent(R.id.snippet_widget_add, action)
-      views.setOnClickPendingIntent(R.id.snippet_widget_root, action)
-      manager.updateAppWidget(ids, views)
     }
 
     private fun readCount(context: Context): Int? {

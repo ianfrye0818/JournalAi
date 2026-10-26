@@ -12,7 +12,7 @@ import { snippetsRepo } from '@/lib/snippets/repo';
  * only fills in for a day this device has none of (e.g. right after a fresh install).
  */
 
-type EntryText = Pick<Entry, 'title' | 'body' | 'tags'>;
+type EntryText = Pick<Entry, 'title' | 'body' | 'tags'> & Partial<Pick<Entry, 'mood'>>;
 
 const toExportSnippet = (s: { text: string; capturedAt: Date }): ExportSnippet => ({
   text: s.text,
@@ -38,6 +38,7 @@ export async function loadExportDay(
     title: entry.title,
     body: entry.body,
     tags: entry.tags,
+    mood: entry.mood,
     snippets: local.length > 0 ? local.map(toExportSnippet) : remoteSnippets(serverDay),
   };
 }
@@ -54,7 +55,13 @@ export async function loadFinalizedDays(from: string, to: string): Promise<Expor
   }
 
   const rows = await db
-    .select({ date: entries.localDate, title: entries.title, body: entries.body, tags: entries.tags })
+    .select({
+      date: entries.localDate,
+      title: entries.title,
+      body: entries.body,
+      tags: entries.tags,
+      mood: entries.mood,
+    })
     .from(entries)
     .innerJoin(days, eq(days.localDate, entries.localDate))
     .where(and(eq(days.status, 'finalized'), gte(entries.localDate, from), lte(entries.localDate, to)))

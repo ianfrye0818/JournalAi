@@ -46,7 +46,7 @@ export async function autoExportFinalized(day: DayView) {
   }
 }
 
-type EntryText = Pick<Entry, 'title' | 'body' | 'tags'>;
+type EntryText = Pick<Entry, 'title' | 'body' | 'tags'> & Partial<Pick<Entry, 'mood'>>;
 
 /** Writes one day to the vault on request, and says how it went. */
 export async function saveDayToVault(date: string, entry: EntryText, serverDay?: DayView) {

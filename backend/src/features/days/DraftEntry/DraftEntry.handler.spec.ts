@@ -20,6 +20,7 @@ const entry = (overrides: Partial<Entry> = {}): Entry => ({
   body: 'I had coffee with Sam. It was formal and stiff.',
   aiDraft: 'I had coffee with Sam.',
   tags: ['sam'],
+  mood: 'happy',
   model: 'claude-sonnet-5-5',
   flags: null,
   createdAt: new Date('2026-10-26T22:00:00Z'),
@@ -57,6 +58,7 @@ const OUTPUT = {
   title: '  Coffee with Sam ',
   body: 'Had coffee with Sam today. We talked for hours.',
   tags: ['Sam', 'coffee', 'sam'],
+  mood: ' Warm ',
 };
 
 describe(DraftEntryHandler, () => {
@@ -146,6 +148,7 @@ describe(DraftEntryHandler, () => {
       body: OUTPUT.body,
       aiDraft: OUTPUT.body,
       tags: ['sam', 'coffee'],
+      mood: 'warm',
       model: 'claude-sonnet-5-5',
     };
     expect(prisma.entry.upsert).toHaveBeenCalledWith({

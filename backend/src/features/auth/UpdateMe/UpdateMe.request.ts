@@ -1,4 +1,11 @@
-import { IsInt, IsOptional, IsTimeZone, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsTimeZone,
+  Max,
+  Min,
+} from 'class-validator';
 export class UpdateMeRequest {
   @IsOptional()
   @IsInt()
@@ -8,4 +15,7 @@ export class UpdateMeRequest {
   @IsOptional()
   @IsTimeZone()
   timezone?: string;
+  @IsOptional()
+  @IsBoolean()
+  monthlyRecap?: boolean;
 }

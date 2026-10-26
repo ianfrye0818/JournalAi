@@ -104,8 +104,14 @@ Set `FROM_EMAIL` to an address on your verified Resend domain. For initial testi
 Resend's `onboarding@resend.dev` sender can send to your Resend account address.
 See [Resend's sending API](https://resend.com/docs/api-reference/emails/send-email).
 
-The monthly job loads active users from the database and sends each recap to
-that user’s saved email address using only their own journal data and timezone.
+Recaps are opt-in: a user turns them on under Settings → Monthly recap email
+(`PATCH /auth/me` with `monthlyRecap`). The monthly job loads active, opted-in
+users and sends each recap to that user’s saved email address using only their
+own journal data and timezone. Every recap carries a "Stop these emails" link and
+RFC 8058 `List-Unsubscribe` headers pointing at
+`/api/monthly-summary/unsubscribe?id=<recap id>` (built from `API_URL`). The GET
+shows a confirm button and the POST unsubscribes, so link scanners can't
+unsubscribe anyone.
 Configure `RESEND_API_KEY` and `FROM_EMAIL`, then restart the backend.
 No recipient environment variable is needed.
 
@@ -136,3 +142,16 @@ a duplicate if recovery occurs after that window. Retained email content is
 removed when the owning account is deleted.
 
 Tests mock email and AI providers; they do not send real journal emails.
+
+## Password reset
+
+`POST /api/auth/password/forgot` with `{ email }` always returns 204, so it can't
+be used to find out which emails have accounts. For an active account it emails
+a 6-digit code through Resend (needs `RESEND_API_KEY` and `FROM_EMAIL`), at most
+once a minute. Only a sha256 hash of the code is kept, in Redis, for 15 minutes.
+
+`POST /api/auth/password/reset` with `{ email, code, password }` sets the new
+password, uses up the code, revokes every existing token, and returns a fresh
+`{ token, user }` so the app signs straight in. Each account gets 10 wrong codes
+per hour, counted across all codes issued that hour, so asking for new codes
+doesn't buy more guesses. Both routes are also limited per IP like login.

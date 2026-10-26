@@ -1,4 +1,3 @@
-import { MonthlySummaryService } from './features/monthly-summary/monthly-summary.service';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { CqrsModule } from '@nestjs/cqrs';
@@ -7,6 +6,7 @@ import { AuthModule } from './features/auth/auth.module';
 import { DaysModule } from './features/days/days.module';
 import { EntriesModule } from './features/entries/entries.module';
 import { HealthModule } from './features/health/health.module';
+import { MonthlySummaryModule } from './features/monthly-summary/monthly-summary.module';
 import { QuestionsModule } from './features/questions/questions.module';
 import { SnippetsModule } from './features/snippets/snippets.module';
 import { StyleProfileModule } from './features/style-profile/style-profile.module';
@@ -30,11 +30,9 @@ import { GlobalServicesModule } from './services/globalservices.module';
     QuestionsModule,
     AuthModule,
     StyleProfileModule,
+    MonthlySummaryModule,
   ],
   controllers: [],
-  providers: [
-    MonthlySummaryService,
-    { provide: APP_GUARD, useClass: AuthGuard },
-  ],
+  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule {}

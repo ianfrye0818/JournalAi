@@ -24,9 +24,16 @@ export class UpdateEntryHandler implements ICommandHandler<
     entryId,
     request,
   }: UpdateEntryCommand): Promise<UpdateEntryResponse> {
-    const { title, body, tags } = request;
-    if (title === undefined && body === undefined && tags === undefined) {
-      throw new BadRequestException('Send at least one of title, body, tags');
+    const { title, body, tags, mood } = request;
+    if (
+      title === undefined &&
+      body === undefined &&
+      tags === undefined &&
+      mood === undefined
+    ) {
+      throw new BadRequestException(
+        'Send at least one of title, body, tags, mood',
+      );
     }
 
     const entry = await this.prisma.entry.findFirst({
@@ -44,6 +51,8 @@ export class UpdateEntryHandler implements ICommandHandler<
         title: title === undefined ? undefined : title.trim() || null,
         body,
         tags: tags && normalizeTags(tags),
+        mood:
+          mood === undefined ? undefined : mood.trim().toLowerCase() || null,
       },
     });
     return EntryResponse.from(updated);

@@ -88,6 +88,7 @@ export class DraftEntryHandler implements ICommandHandler<
       body: output.body,
       aiDraft: output.body,
       tags: normalizeTags(output.tags),
+      mood: output.mood.trim().toLowerCase() || null,
       model,
     };
     const entry = await this.prisma.$transaction(async (tx) => {

@@ -52,6 +52,7 @@ export const entries = sqliteTable('entries', {
   body: text('body').notNull(),
   aiDraft: text('ai_draft').notNull(),
   tags: text('tags', { mode: 'json' }).$type<string[]>().notNull().default([]),
+  mood: text('mood'),
   model: text('model'),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
   fetchedAt: integer('fetched_at', { mode: 'timestamp_ms' }).notNull(),

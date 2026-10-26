@@ -14,6 +14,9 @@ export class UserResponse {
   @ApiProperty({ description: 'Local hour a new day starts', example: 4 })
   dayRolloverHour!: number;
 
+  @ApiProperty({ description: 'Opted in to the monthly recap email' })
+  monthlyRecap!: boolean;
+
   @ApiProperty()
   createdAt!: Date;
 
@@ -23,6 +26,7 @@ export class UserResponse {
       email: user.email,
       timezone: user.timezone,
       dayRolloverHour: user.dayRolloverHour,
+      monthlyRecap: user.monthlyRecap,
       createdAt: user.createdAt,
     };
   }

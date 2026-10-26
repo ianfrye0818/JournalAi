@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import z from 'zod';
 import { AnthropicService } from '../../services/anthropic.service';
+import { ConfigService } from '../../services/configService/config.service';
 import { EmailService } from '../../services/email.service';
 import { PrismaService } from '../../services/prisma.service';
 
@@ -71,13 +72,14 @@ export class MonthlySummaryService {
     private readonly prisma: PrismaService,
     private readonly ai: AnthropicService,
     private readonly email: EmailService,
+    private readonly config: ConfigService,
   ) {}
 
   // Hourly checks allow recovery after downtime; each month is delivered only once.
   @Cron('0 0 * * * *', { timeZone: 'UTC', waitForCompletion: true })
   async run(now = new Date()): Promise<void> {
     const users = await this.prisma.user.findMany({
-      where: { isActive: true },
+      where: { isActive: true, monthlyRecap: true },
       select: { id: true, email: true, timezone: true },
     });
     for (const user of users) {
@@ -115,6 +117,7 @@ export class MonthlySummaryService {
       data: { lockedUntil: lease },
     });
     if (!claim.count) return;
+    const unsubscribeUrl = `${this.config.get('API_URL').replace(/\/$/, '')}/api/monthly-summary/unsubscribe?id=${record.id}`;
     try {
       let { subject, text, html } = record;
       if (!subject || !text || !html) {
@@ -177,12 +180,14 @@ export class MonthlySummaryService {
           ],
         });
         subject = `Your JournalAI recap — ${period.label}`;
-        text = `${period.label}\n\n${stats}\n\nYour month\n${result.summary}\n\nOverall mood (AI impression)\n${result.mood}\n\nThemes\n${result.themes.map((s) => `• ${s}`).join('\n')}\n\nHighlights\n${result.highlights.map((s) => `• ${s}`).join('\n')}\n\nA question to carry forward\n${result.reflection}${truncated ? '\n\nBased on excerpts; some journal text was omitted for length.' : ''}\n\nMood and themes are AI interpretations of your writing.`;
+        text = `${period.label}\n\n${stats}\n\nYour month\n${result.summary}\n\nOverall mood (AI impression)\n${result.mood}\n\nThemes\n${result.themes.map((s) => `• ${s}`).join('\n')}\n\nHighlights\n${result.highlights.map((s) => `• ${s}`).join('\n')}\n\nA question to carry forward\n${result.reflection}${truncated ? '\n\nBased on excerpts; some journal text was omitted for length.' : ''}\n\nMood and themes are AI interpretations of your writing.\n\nStop these emails: ${unsubscribeUrl}`;
         html = `<html><body><main style="max-width:640px;margin:32px auto;font-family:Georgia,serif;line-height:1.7;color:#26352c"><h1>${escapeHtml(period.label)}</h1>${text
           .split('\n\n')
-          .slice(1)
+          .slice(1, -1)
           .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
-          .join('')}</main></body></html>`;
+          .join(
+            '',
+          )}<p style="font-size:13px;color:#6b756e"><a href="${escapeHtml(unsubscribeUrl)}" style="color:#6b756e">Stop these emails</a></p></main></body></html>`;
         await this.prisma.monthlySummary.update({
           where: { id: record.id },
           data: { subject, text, html },
@@ -194,6 +199,10 @@ export class MonthlySummaryService {
         text,
         html,
         idempotencyKey: `monthly-summary/${record.id}`,
+        headers: {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       });
       await this.prisma.monthlySummary.update({
         where: { id: record.id },

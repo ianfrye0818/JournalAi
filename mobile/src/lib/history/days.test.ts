@@ -58,6 +58,7 @@ describe('fetchEntriesFor', () => {
     body: 'Body',
     aiDraft: 'Body',
     tags: [],
+    mood: null,
     model: null,
     createdAt: `${date}T20:00:00Z`,
     updatedAt: `${date}T20:00:00Z`,

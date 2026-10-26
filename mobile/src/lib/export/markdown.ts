@@ -12,6 +12,8 @@ export type ExportDay = {
   /** Markdown. */
   body: string;
   tags: readonly string[];
+  /** Written to frontmatter when set. */
+  mood?: string | null;
   snippets: readonly ExportSnippet[];
 };
 
@@ -64,6 +66,7 @@ export function renderMarkdown(day: ExportDay, { includeSnippets }: RenderOption
     `title: ${yamlString(title)}`,
     'tags:',
     ...exportTags(day.tags).map((t) => `  - ${t}`),
+    ...(day.mood?.trim() ? [`mood: ${yamlString(day.mood.trim())}`] : []),
     `snippets: ${day.snippets.length}`,
     'source: journalai',
     '---',

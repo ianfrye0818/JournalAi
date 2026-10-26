@@ -8,6 +8,7 @@ type EmailProps = {
   html: string;
   text?: string;
   idempotencyKey?: string;
+  headers?: Record<string, string>;
   attachments?: {
     content?: string | Buffer;
     fileName?: string | false;
@@ -44,6 +45,7 @@ export class EmailService {
         subject: props.subject,
         html: props.html,
         text: props.text,
+        headers: props.headers,
         attachments: props.attachments?.map((attachment) => ({
           filename: attachment.fileName || undefined,
           content: Buffer.isBuffer(attachment.content)

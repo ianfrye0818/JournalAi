@@ -7,6 +7,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { MAX_MOOD_LENGTH } from '@src/features/days/prompts/draft.prompt';
 import { MAX_TAGS } from '../shared/tags';
 
 /** Send any of the fields; omitted ones are left as they are. */
@@ -35,4 +36,14 @@ export class UpdateEntryRequest {
   @IsString({ each: true })
   @MaxLength(40, { each: true })
   tags?: string[];
+
+  @ApiProperty({
+    required: false,
+    maxLength: MAX_MOOD_LENGTH,
+    description: 'An empty mood clears it',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(MAX_MOOD_LENGTH)
+  mood?: string;
 }

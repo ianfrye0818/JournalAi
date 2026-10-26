@@ -1,7 +1,9 @@
 <resources>
   <string name="snippet_widget_name">JournalAI · Quick snippet</string>
-  <string name="snippet_widget_description">Capture a snippet and see your total for today.</string>
-  <string name="snippet_widget_add">+ Add snippet</string>
+  <string name="snippet_widget_description">Type or dictate a snippet and see your total for today.</string>
+  <string name="snippet_widget_add">+ Type</string>
+  <string name="snippet_widget_dictate">● Dictate</string>
+  <string name="snippet_widget_dictate_description">Dictate a snippet</string>
   <string name="snippet_widget_open">Open JournalAI to get started</string>
   <plurals name="snippet_widget_count">
     <item quantity="one">%d snippet today</item>

@@ -1,8 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { afterCapture } from '@/lib/days/after-capture';
 import { dayHref } from '@/lib/days/flow';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, StyleSheet, TextInput, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,14 +20,28 @@ import { snippetsRepo } from '@/lib/snippets/repo';
 /**
  * Quick capture, deep-linkable as `journalai://capture`. Opened cold from a link or widget,
  * there's nothing to go back to, so it falls through to Today.
+ *
+ * Params: `dictate=1` starts the mic straight away (the widget's Dictate button), and `text` with
+ * `source=share` prefills something shared from another app (see `useShareCapture`).
  */
 export default function CaptureScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const [text, setText] = useState('');
+  const params = useLocalSearchParams<{ text?: string; source?: string; dictate?: string }>();
+  const shared = params.source === 'share';
+  const [text, setText] = useState(params.text ?? '');
   const [saving, setSaving] = useState(false);
   const dictation = useDictation({ value: text, onChangeText: setText });
+
+  const autoDictated = useRef(false);
+  useEffect(() => {
+    if (params.dictate !== '1' || autoDictated.current) return;
+    autoDictated.current = true;
+    dictation.toggle();
+    // Once per open; dictation.toggle is a new function every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.dictate]);
   const listening = dictation.active;
   const bottomPadding = insets.bottom + Spacing.three;
 
@@ -43,7 +57,7 @@ export default function CaptureScreen() {
     setSaving(true);
     try {
       const snippet = await snippetsRepo.add(text, {
-        source: dictation.dictated ? 'voice' : 'text',
+        source: shared ? 'share' : dictation.dictated ? 'voice' : 'text',
       });
       haptics.success();
       setText('');
@@ -74,7 +88,7 @@ export default function CaptureScreen() {
         <View style={styles.header}>
           <Button title="Cancel" variant="ghost" onPress={close} />
           <ThemedText type="heading" accessibilityRole="header">
-            Quick capture
+            {shared ? 'Save to journal' : 'Quick capture'}
           </ThemedText>
           <Button title="Save" loading={saving} disabled={!text.trim()} onPress={save} />
         </View>

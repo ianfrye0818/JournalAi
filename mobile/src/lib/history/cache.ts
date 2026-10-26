@@ -21,6 +21,7 @@ async function upsertEntry(tx: Tx, date: string, entry: ApiEntry, now: Date) {
     body: entry.body,
     aiDraft: entry.aiDraft,
     tags: entry.tags,
+    mood: entry.mood,
     model: entry.model,
     updatedAt: new Date(entry.updatedAt),
     fetchedAt: now,

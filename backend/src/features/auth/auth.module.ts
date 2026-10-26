@@ -7,6 +7,8 @@ import { LogoutHandler } from './Logout/Logout.handler';
 import { RegisterHandler } from './Register/Register.handler';
 import { UpdateMeHandler } from './UpdateMe/UpdateMe.handler';
 import { DeleteAccountHandler } from './DeleteAccount/DeleteAccount.handler';
+import { RequestPasswordResetHandler } from './RequestPasswordReset/RequestPasswordReset.handler';
+import { ResetPasswordHandler } from './ResetPassword/ResetPassword.handler';
 
 @Module({
   // Limits are set per route with @Throttle; ThrottlerGuard is only applied
@@ -20,6 +22,8 @@ import { DeleteAccountHandler } from './DeleteAccount/DeleteAccount.handler';
     GetMeHandler,
     UpdateMeHandler,
     DeleteAccountHandler,
+    RequestPasswordResetHandler,
+    ResetPasswordHandler,
   ],
 })
 export class AuthModule {}

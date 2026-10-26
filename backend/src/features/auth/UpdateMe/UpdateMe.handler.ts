@@ -14,6 +14,9 @@ export class UpdateMeHandler implements ICommandHandler<UpdateMeCommand> {
             ? { dayRolloverHour: request.dayRolloverHour }
             : {}),
           ...(request.timezone != null ? { timezone: request.timezone } : {}),
+          ...(request.monthlyRecap != null
+            ? { monthlyRecap: request.monthlyRecap }
+            : {}),
         },
       }),
     );

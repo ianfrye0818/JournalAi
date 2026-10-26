@@ -20,6 +20,14 @@ export class EntryResponse {
   @ApiProperty({
     type: String,
     nullable: true,
+    description: 'Short impression of how the day felt',
+    example: 'tired but hopeful',
+  })
+  mood!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
     description: 'Model that wrote aiDraft',
   })
   model!: string | null;
@@ -37,6 +45,7 @@ export class EntryResponse {
       body: entry.body,
       aiDraft: entry.aiDraft,
       tags: entry.tags,
+      mood: entry.mood,
       model: entry.model,
       createdAt: entry.createdAt,
       updatedAt: entry.updatedAt,

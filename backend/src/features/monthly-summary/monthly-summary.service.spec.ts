@@ -78,6 +78,7 @@ describe('monthly recap', () => {
       prisma as never,
       ai as never,
       email as never,
+      { get: () => 'https://api.example.com/' } as never,
     );
     return { service, prisma, ai, email };
   }
@@ -98,6 +99,13 @@ describe('monthly recap', () => {
         to: 'me@example.com',
         text: expect.stringContaining('1 of 29 days logged') as unknown,
         idempotencyKey: 'monthly-summary/recap',
+        headers: expect.objectContaining({
+          'List-Unsubscribe':
+            '<https://api.example.com/api/monthly-summary/unsubscribe?id=recap>',
+        }) as unknown,
+        html: expect.stringContaining(
+          'https://api.example.com/api/monthly-summary/unsubscribe?id=recap',
+        ) as unknown,
       }),
     );
     expect(
@@ -119,7 +127,7 @@ describe('monthly recap', () => {
     email.sendEmail.mockRejectedValueOnce(new Error('Unavailable'));
     await service.run(new Date('2024-03-02'));
     expect(prisma.user.findMany).toHaveBeenCalledWith({
-      where: { isActive: true },
+      where: { isActive: true, monthlyRecap: true },
       select: { id: true, email: true, timezone: true },
     });
     const queries = prisma.dailySession.findMany.mock.calls as unknown as [

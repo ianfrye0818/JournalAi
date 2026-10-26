@@ -115,7 +115,7 @@ export default function DraftScreen() {
           )}
         </View>
         <MarkdownView source={entry.body} />
-        <EntryTags tags={entry.tags} />
+        <EntryTags tags={entry.tags} mood={entry.mood} />
       </ScrollView>
 
       <FlowFooter>
