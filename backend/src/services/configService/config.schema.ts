@@ -12,7 +12,6 @@ export const configSchema = z.object({
 
   // EMAIL
   RESEND_API_KEY: z.string().min(1).optional(),
-  MONTHLY_SUMMARY_EMAIL: z.email().optional(),
   FROM_EMAIL: z.email().optional(),
 
   // REDIS

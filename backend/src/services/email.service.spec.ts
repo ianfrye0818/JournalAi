@@ -22,7 +22,7 @@ describe('Resend email', () => {
         headers: expect.objectContaining({
           Authorization: 'Bearer test-key',
           'Idempotency-Key': 'month/1',
-        }),
+        }) as unknown,
       }),
     );
   });

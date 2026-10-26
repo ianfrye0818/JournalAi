@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import z from 'zod';
 import { AnthropicService } from '../../services/anthropic.service';
-import { ConfigService } from '../../services/configService/config.service';
 import { EmailService } from '../../services/email.service';
 import { PrismaService } from '../../services/prisma.service';
 
@@ -69,7 +68,6 @@ export function escapeHtml(value: string): string {
 export class MonthlySummaryService {
   private readonly logger = new Logger(MonthlySummaryService.name);
   constructor(
-    private readonly config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly ai: AnthropicService,
     private readonly email: EmailService,
@@ -78,31 +76,25 @@ export class MonthlySummaryService {
   // Hourly checks allow recovery after downtime; each month is delivered only once.
   @Cron('0 0 * * * *', { timeZone: 'UTC', waitForCompletion: true })
   async run(now = new Date()): Promise<void> {
-    const recipient = this.config.getAll().MONTHLY_SUMMARY_EMAIL;
-    if (!recipient) return;
-    try {
-      await this.deliver(recipient, now);
-    } catch {
-      this.logger.error(
-        'Monthly recap failed; the next hourly check will retry.',
-      );
+    const users = await this.prisma.user.findMany({
+      where: { isActive: true },
+      select: { id: true, email: true, timezone: true },
+    });
+    for (const user of users) {
+      try {
+        await this.deliver(user, now);
+      } catch {
+        this.logger.error(
+          `Monthly recap failed for user ${user.id}; the next hourly check will retry.`,
+        );
+      }
     }
   }
 
-  private async deliver(recipient: string, now: Date): Promise<void> {
-    // Explicit recipient opt-in: never send another account's journal to this address.
-    const user = await this.prisma.user.findFirst({
-      where: {
-        email: { equals: recipient, mode: 'insensitive' },
-        isActive: true,
-      },
-    });
-    if (!user) {
-      this.logger.warn(
-        'Monthly recap recipient does not match an active account.',
-      );
-      return;
-    }
+  private async deliver(
+    user: { id: string; email: string; timezone: string },
+    now: Date,
+  ): Promise<void> {
     const period = previousMonth(now, user.timezone);
     if (!period.due) return;
     const key = { userId: user.id, month: period.month };

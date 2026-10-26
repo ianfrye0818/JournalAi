@@ -104,9 +104,10 @@ Set `FROM_EMAIL` to an address on your verified Resend domain. For initial testi
 Resend's `onboarding@resend.dev` sender can send to your Resend account address.
 See [Resend's sending API](https://resend.com/docs/api-reference/emails/send-email).
 
-To enable your personal recap, set `MONTHLY_SUMMARY_EMAIL` in `backend/.env` to
-**your existing JournalAI account email**, and restart the backend. No other
-account is included or emailed. Missing recipient configuration disables the job.
+The monthly job loads active users from the database and sends each recap to
+that user’s saved email address using only their own journal data and timezone.
+Configure `RESEND_API_KEY` and `FROM_EMAIL`, then restart the backend.
+No recipient environment variable is needed.
 
 Apply the database migration before starting the updated server:
 
