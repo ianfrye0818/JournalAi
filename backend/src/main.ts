@@ -1,13 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { NextFunction, Request, Response } from 'express';
-import session from 'express-session';
-import { createClient, type RedisClientType } from 'redis';
 import { AppModule } from './app.module';
 import {
   createCorsOptions,
   createGlobalFilters,
   createOpenApiConfig,
-  createSessionOptions,
   createValidationPipe,
 } from './config';
 import { AppLogger } from './services/applogger.service';
@@ -27,16 +24,14 @@ async function bootstrap() {
   const port = configService.get('PORT') ?? 3000;
   const isDev = configService.get('NODE_ENV') === 'development';
 
-  const redisClient: RedisClientType = createClient({
-    url: configService.get('REDIS_URL'),
-  });
-  await redisClient.connect();
   if (isDev) {
     app.use((req: Request, _: Response, next: NextFunction) => {
       logger.log({
         params: JSON.stringify(req.params),
         query: JSON.stringify(req.query),
-        body: JSON.stringify(req.body),
+        body: JSON.stringify(req.body, (key: string, value: unknown) =>
+          key === 'password' ? '[redacted]' : value,
+        ),
         path: req.path,
         method: req.method,
         ip: req.ip,
@@ -47,7 +42,6 @@ async function bootstrap() {
     });
   }
 
-  app.use(session(createSessionOptions(configService, redisClient)));
   app.enableCors(createCorsOptions(configService));
   app.useGlobalPipes(createValidationPipe());
   createOpenApiConfig(configService, app);

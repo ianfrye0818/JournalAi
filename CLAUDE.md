@@ -19,9 +19,9 @@ npm run build          # nest build -> dist/
 npm run typecheck      # tsc --noEmit
 npm run lint           # eslint --fix
 npm run format         # prettier
-npm test               # jest, rootDir=src, matches *.spec.ts
-npx jest src/path/to/file.spec.ts   # single test file
-npx jest -t "test name"             # single test by name
+npm test               # jest (with --experimental-vm-modules, needed because NestJS 12 is ESM-only), rootDir=src
+npm test -- path/to/file.spec.ts    # single test file (bare `npx jest` fails on ESM imports)
+npm test -- -t "test name"          # single test by name
 npm run db:generate    # prisma generate -> src/generated/prisma
 npm run db:migrate     # prisma migrate dev
 ```

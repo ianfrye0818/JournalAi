@@ -1,7 +1,4 @@
 import { CorsOptions, CorsOptionsDelegate } from '@nestjs/common/internal';
-import { RedisStore } from 'connect-redis';
-import session from 'express-session';
-import { RedisClientType } from 'redis';
 import { ConfigService } from '../services/configService/config.service';
 
 export const createCorsOptions = (
@@ -11,9 +8,9 @@ export const createCorsOptions = (
     origin: [
       'http://localhost:3000',
       'http://localhost:5173',
-      configService.get('FRONTEND_URL'),
+      configService.getAll().FRONTEND_URL,
       ...(process.env.CORS_ORIGIN ? JSON.parse(process.env.CORS_ORIGIN) : []),
-    ],
+    ].filter(Boolean),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: [
@@ -70,8 +67,8 @@ export const createOpenApiConfig = (
 ) => {
   const isDev = configService.get('NODE_ENV') === 'development';
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Fleet Management API')
-    .setDescription('Fleet Management API Documentation')
+    .setTitle('JournalAI API')
+    .setDescription('JournalAI API Documentation')
     .setVersion(process.env.VERSION ?? '1.0.0')
     .addGlobalResponse({
       type: BadRequestException,
@@ -97,6 +94,9 @@ export const createOpenApiConfig = (
       type: InternalServerErrorException,
       status: HttpStatus.INTERNAL_SERVER_ERROR,
     })
+    // Every route needs a bearer token unless it is marked @Public().
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'opaque' })
+    .addSecurityRequirements('bearer')
     .build();
 
   const documentFactory = SwaggerModule.createDocument(app, swaggerConfig);
@@ -107,32 +107,6 @@ export const createOpenApiConfig = (
     });
   }
 };
-export const createSessionOptions = (
-  configService: ConfigService,
-  redisClient: RedisClientType,
-): session.SessionOptions => {
-  const isDev = configService.get('NODE_ENV') === 'development';
-  return {
-    secret: configService.get('SESSION_SECRET'),
-    resave: false,
-    saveUninitialized: false,
-    proxy: true,
-    rolling: true,
-    store: new RedisStore({
-      client: redisClient,
-      prefix: 'qmon:session:',
-      ttl: 24 * 60 * 60 * 1000, // 24 hours
-    }),
-    cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      secure: !isDev,
-      httpOnly: true,
-      path: '/',
-      sameSite: 'lax',
-    },
-  };
-};
-
 export const createValidationPipe = () => {
   return new ValidationPipe({
     whitelist: true,

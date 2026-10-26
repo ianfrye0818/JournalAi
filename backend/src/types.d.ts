@@ -1,9 +1,13 @@
 import 'express';
-import 'express-session';
+import type { AuthUser } from './decorators/current-user.decorator';
 
-declare module 'express-session' {
-  interface SessionData {
-    user?: unknown;
-    isAuthenticated?: boolean;
+declare global {
+  namespace Express {
+    interface Request {
+      /** Set by AuthGuard on authenticated routes. */
+      user?: AuthUser;
+      /** The raw bearer token the request was authenticated with. */
+      authToken?: string;
+    }
   }
 }

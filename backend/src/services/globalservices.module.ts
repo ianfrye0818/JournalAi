@@ -1,25 +1,20 @@
 import { Global, Module } from '@nestjs/common';
 import { AppLogger } from './applogger.service';
-import { ConfigService } from './configService/config.service';
 import { EmailService } from './email.service';
 import { PrismaService } from './prisma.service';
 import { RedisService } from './redis.service';
+import { TokenService } from './token.service';
 
+// ConfigService is provided globally by CustomConfigModule (registered in AppModule).
 @Global()
 @Module({
   providers: [
     AppLogger,
-    ConfigService,
     EmailService,
     PrismaService,
     RedisService,
+    TokenService,
   ],
-  exports: [
-    AppLogger,
-    ConfigService,
-    EmailService,
-    PrismaService,
-    RedisService,
-  ],
+  exports: [AppLogger, EmailService, PrismaService, RedisService, TokenService],
 })
 export class GlobalServicesModule {}
