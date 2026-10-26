@@ -5,7 +5,7 @@ import { setRolloverHour } from '@/lib/settings';
 import { cancelReminder } from '@/lib/reminders';
 import { authApi } from '@/lib/api/auth';
 import { api, setAuthToken, setUnauthorizedHandler } from '@/lib/api/client';
-import type { Credentials, User } from '@/lib/api/types';
+import type { Credentials, PasswordReset, User } from '@/lib/api/types';
 import { tokenStore } from '@/lib/auth/token-store';
 import { clearLocalData } from '@/lib/db/client';
 import { getSyncOwner, setSyncOwner, syncEngine } from '@/lib/sync';
@@ -19,7 +19,10 @@ type AuthContextValue = {
   signIn: (credentials: Credentials) => Promise<void>;
   signUp: (credentials: Credentials) => Promise<void>;
   signOut: () => Promise<void>;
-  updateProfile: (patch: { dayRolloverHour: number; timezone: string }) => Promise<void>;
+  resetPassword: (reset: PasswordReset) => Promise<void>;
+  updateProfile: (
+    patch: Partial<Pick<User, 'dayRolloverHour' | 'timezone' | 'monthlyRecap'>>,
+  ) => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
 
@@ -34,7 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSession = async ({ revoke }: { revoke: boolean }) => {
     // A deliberate sign-out pushes the outbox first. After a 401 the token is already dead.
     const flushed = revoke ? await syncEngine.flush() : false;
-    await cancelReminder();
+    // Never let a notifications failure block sign-out (or the 401 path).
+    await cancelReminder().catch(() => {});
     syncEngine.stop();
     // `api` reads the token synchronously, so logout still carries it even though we null it next.
     if (revoke) authApi.logout().catch(() => {});
@@ -110,6 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await startSession(res.token, res.user);
     },
     signOut: () => clearSession({ revoke: true }),
+    resetPassword: async (reset) => {
+      const res = await authApi.resetPassword(reset);
+      await startSession(res.token, res.user);
+    },
     updateProfile: async (patch) => {
       const next = await api<User>('/auth/me', {
         method: 'PATCH',
@@ -128,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         syncEngine.start();
         throw error;
       }
-      await cancelReminder();
+      await cancelReminder().catch(() => {});
       await clearLocalData();
       await tokenStore.clear();
       setAuthToken(null);

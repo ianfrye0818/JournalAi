@@ -76,6 +76,14 @@ export default function SignInScreen() {
         onPress={submit}
       />
       <Button
+        title="Forgot password?"
+        variant="ghost"
+        fullWidth
+        onPress={() =>
+          router.push({ pathname: '/forgot-password', params: { email: email.trim() } })
+        }
+      />
+      <Button
         title="New here? Create an account"
         variant="ghost"
         fullWidth

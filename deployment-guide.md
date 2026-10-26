@@ -112,14 +112,13 @@ Create a separate hosted Postgres database and Redis instance. Use provider-inje
 | --- | --- |
 | `NODE_ENV` | `production`; development mode logs request bodies, including journal content |
 | `PORT` | Host-assigned port, or `3000` on your own container host |
-| `API_URL` | Public HTTPS origin, e.g. `https://journal-api.example.com`; required by validation |
+| `API_URL` | Public HTTPS origin, e.g. `https://journal-api.example.com`; required by validation and used for recap unsubscribe links |
 | `DATABASE_URL` | Hosted PostgreSQL connection string; include provider-required TLS settings |
 | `REDIS_HOST` | Private Redis hostname reachable from the API |
 | `REDIS_PORT` | Redis port |
 | `REDIS_PASSWORD` | Redis password if configured |
-| `SMTP_HOST` | Your SMTP hostname; currently needed during startup |
-| `SMTP_PORT` | Your SMTP port; currently needed during startup |
-| `FROM_EMAIL` | Valid sender address; configure even though email flows are not exposed yet |
+| `RESEND_API_KEY` | Resend API key; needed to send the monthly recap email |
+| `FROM_EMAIL` | Sender address on your verified Resend domain |
 | `ANTHROPIC_API_KEY` | Server-only API key, required for working AI features |
 | `ANTHROPIC_MODEL` | Model identifier available to your Anthropic account |
 | `FRONTEND_URL` | Optional browser frontend origin; native apps do not need CORS allowlisting |
@@ -127,7 +126,7 @@ Create a separate hosted Postgres database and Redis instance. Use provider-inje
 
 Two implementation details affect provider selection:
 
-1. SMTP fields are optional in Zod, but `EmailService` calls the throwing config getter for host/port at startup. Supply them. SMTP authentication is not implemented, and the transport currently disables certificate verification. Harden this service before enabling real email features; simply adding SMTP username/password variables will not configure authentication.
+1. `RESEND_API_KEY` and `FROM_EMAIL` are optional in Zod, but `EmailService` reads them with the throwing config getter when it sends. Without them the app starts, but each opted-in user's recap fails and retries hourly.
 2. `RedisService` accepts host/port/password only. It does not read `REDIS_URL`, a username, or TLS options. Use private-network Redis compatible with this connection style. A TLS-only/HTTP Redis provider needs a code change first. Redis stores login sessions, so persistence and availability matter; losing its data signs users out.
 
 ### Option A: Railway dashboard deployment
@@ -593,7 +592,7 @@ Before widening access, remove the repo-root `test-account.local.md` from shared
 | Symptom | Check |
 | --- | --- |
 | Backend cannot find Prisma config or database URL | Run from `backend/`; pass `--config prisma7.config.ts`; check injected `DATABASE_URL` |
-| Backend starts locally but not on host | Required Zod variables, SMTP host/port getters, `PORT`, and correct Node version |
+| Backend starts locally but not on host | Required Zod variables, `PORT`, and correct Node version |
 | Redis errors / login fails | Separate host/port/password; private DNS reachability; this client has no TLS/Redis URL support |
 | Health says OK but AI fails | Test auth/DB/Redis separately; check Anthropic key, available model, billing, and logs |
 | App cannot reach API | `/api` suffix, emulator vs physical-device address, firewall, HTTP restrictions, and build-time URL |

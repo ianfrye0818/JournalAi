@@ -56,7 +56,7 @@ function SettingRow({
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { user, signOut, deleteAccount } = useAuth();
+  const { user, signOut, deleteAccount, updateProfile } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const style = useQuery({
     queryKey: ['style-profile'],
@@ -163,6 +163,34 @@ export default function SettingsScreen() {
           label="Evening reminder"
           value={/^\d{2}:\d{2}$/.test(reminder) ? formatStoredTime(reminder, timeFormat) : reminder}
           onPress={() => router.push('/settings/reminder')}
+        />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <SettingRow
+          icon={{ ios: 'envelope', android: 'mail', web: 'mail' }}
+          label="Monthly recap email"
+          value={!user ? '…' : user.monthlyRecap ? 'On' : 'Off'}
+          onPress={
+            user
+              ? () =>
+                  Alert.alert(
+                    user.monthlyRecap ? 'Stop monthly recaps?' : 'Get a monthly recap?',
+                    user.monthlyRecap
+                      ? "You won't get the recap email any more."
+                      : `On the 1st of each month, an AI summary of last month's journal (themes, highlights and mood) is emailed to ${user.email}.`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: user.monthlyRecap ? 'Turn off' : 'Turn on',
+                        onPress: () => {
+                          void updateProfile({ monthlyRecap: !user.monthlyRecap }).catch(
+                            (e: Error) => Alert.alert('Could not save', e.message),
+                          );
+                        },
+                      },
+                    ],
+                  )
+              : undefined
+          }
         />
       </Card>
 

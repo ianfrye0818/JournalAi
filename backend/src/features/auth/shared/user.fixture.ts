@@ -7,6 +7,7 @@ export const makeUser = (overrides: Partial<User> = {}): User => ({
   timezone: 'UTC',
   dayRolloverHour: 4,
   isActive: true,
+  monthlyRecap: false,
   createdAt: new Date('2026-10-01T00:00:00Z'),
   updatedAt: new Date('2026-10-01T00:00:00Z'),
   ...overrides,

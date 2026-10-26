@@ -1,6 +1,8 @@
 import type { TimeFormat } from '@/lib/time';
 import { eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { addDatabaseChangeListener } from 'expo-sqlite';
+import { useSyncExternalStore } from 'react';
 
 import { db } from '@/lib/db/client';
 import { kv } from '@/lib/db/schema';
@@ -34,12 +36,29 @@ export async function setRolloverHour(hour: number) {
 
 const TIME_FORMAT_KEY = 'settings.timeFormat';
 
+// Every snippet card reads this, so it is held in memory (read from kv once) instead of a query per card.
+let timeFormat: TimeFormat | undefined;
+const timeFormatListeners = new Set<() => void>();
+
+// Covers clearLocalData() wiping kv on sign-out or account switch, not just setTimeFormat.
+addDatabaseChangeListener(({ tableName }) => {
+  if (tableName !== 'kv') return;
+  timeFormat = undefined;
+  timeFormatListeners.forEach((listener) => listener());
+});
+
+function getTimeFormat(): TimeFormat {
+  timeFormat ??=
+    db.select().from(kv).where(eq(kv.key, TIME_FORMAT_KEY)).get()?.value === '24h' ? '24h' : '12h';
+  return timeFormat;
+}
+
 /** Default to the familiar AM/PM clock until explicitly changed. */
 export function useTimeFormat(): TimeFormat {
-  const { data } = useLiveQuery(db.select().from(kv).where(eq(kv.key, TIME_FORMAT_KEY)));
-  const value =
-    data[0]?.value ?? db.select().from(kv).where(eq(kv.key, TIME_FORMAT_KEY)).get()?.value;
-  return value === '24h' ? '24h' : '12h';
+  return useSyncExternalStore((listener) => {
+    timeFormatListeners.add(listener);
+    return () => timeFormatListeners.delete(listener);
+  }, getTimeFormat);
 }
 
 export async function setTimeFormat(format: TimeFormat) {

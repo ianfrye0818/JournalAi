@@ -57,6 +57,7 @@ describe(RegisterHandler, () => {
         email: user.email,
         timezone: user.timezone,
         dayRolloverHour: user.dayRolloverHour,
+        monthlyRecap: false,
         createdAt: user.createdAt,
       },
     });

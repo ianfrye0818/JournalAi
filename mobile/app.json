@@ -14,7 +14,6 @@
     },
     "android": {
       "package": "dev.ianfrye.journalai",
-      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#F6F1E8",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -49,7 +48,14 @@
         }
       ],
       "expo-sharing",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": ["text/*"],
+          "disableIOS": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

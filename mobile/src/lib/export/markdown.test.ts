@@ -50,6 +50,13 @@ describe('renderMarkdown', () => {
     );
   });
 
+  it('writes the mood after the tags when there is one', () => {
+    expect(renderMarkdown({ ...day, mood: 'tired but "hopeful"' }, { includeSnippets: false })).toContain(
+      '  - slow-days\nmood: "tired but \\"hopeful\\""\nsnippets: 2',
+    );
+    expect(renderMarkdown({ ...day, mood: '  ' }, { includeSnippets: false })).not.toContain('mood:');
+  });
+
   it('skips the appendix when there are no snippets', () => {
     const md = renderMarkdown({ ...day, snippets: [] }, { includeSnippets: true });
     expect(md).not.toContain('## Snippets');

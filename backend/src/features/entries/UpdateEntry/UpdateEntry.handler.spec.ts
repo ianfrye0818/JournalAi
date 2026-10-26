@@ -88,6 +88,14 @@ describe(UpdateEntryHandler, () => {
     expect(updateArgs().data.title).toBeNull();
   });
 
+  it('lowercases the mood and clears it when blank', async () => {
+    await run({ mood: ' Tired But Hopeful ' });
+    expect(updateArgs().data.mood).toBe('tired but hopeful');
+    prisma.entry.update.mockClear();
+    await run({ mood: '  ' });
+    expect(updateArgs().data.mood).toBeNull();
+  });
+
   it('rejects an empty patch', async () => {
     await expect(run({})).rejects.toThrow(BadRequestException);
     expect(prisma.entry.findFirst).not.toHaveBeenCalled();

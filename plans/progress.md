@@ -8,7 +8,8 @@ Last updated: 2026-10-26 (end of session). To resume, open a new thread with `pl
 | --- | --- |
 | 01–11 (foundation, auth, capture, voice, sync, AI interview, draft/finalize, end-of-day flow, history/search) | Done, committed (latest `b1a4a8e`) |
 | 12 Markdown export | Committed (`59dff34`), not yet tested on a device |
-| 13 Settings: style, rollover, reminders, account | Code complete, uncommitted; device/live-server acceptance pending |
+| 13 Settings: style, rollover, reminders, account | Committed (`957fc1c`); device/live-server acceptance pending |
+| Extras (unplanned, see below) | Committed through `d7e001c`, plus a review-fix pass; device testing pending |
 | 14 Deploy backend & ship APK | Not started |
 | 15 Backlog | Unscheduled |
 
@@ -65,6 +66,31 @@ The Task 12 code was committed as `59dff34`. Typecheck and lint are clean, and a
 4. Change rollover/timezone, relaunch/sign in, and confirm the setting persists and new snippets use the expected day.
 5. With a disposable account on a live server, delete it; verify every related database row and Redis token is removed, local data is cleared, and the old token is rejected. Unit tests use mocks; live cascade deletion has not been exercised here.
 6. Commit Task 13 when reviewed.
+
+## Extras done outside the task list (with Codex), reviewed 2026-10-26
+
+- **Snippet actions:** swipe right to edit and left to delete, replacing long press (`snippet-card.tsx`). Screen readers get the same actions through accessibility actions.
+- **Capture into a finalized day** (`lib/days/after-capture.ts`): prompts to keep the day finalized or reopen it into the draft.
+- **Time format:** a 12h/24h setting (`lib/time.ts`, kv `settings.timeFormat`), used for snippet times, rollover and reminders. It is cached in memory and the cache resets on any `kv` change.
+- **Email:** `EmailService` now uses the Resend HTTP API (`RESEND_API_KEY`, `FROM_EMAIL`); nodemailer and the SMTP settings are gone.
+- **Monthly recap email** (`features/monthly-summary/`): an hourly cron sends an AI recap of last month at 9am on the 1st in each user's timezone.
+  - **Opt-in:** controlled by `User.monthlyRecap` (default false) and toggled in Settings.
+  - **Unsubscribe:** each email has a "Stop these emails" link and `List-Unsubscribe` headers that point to the public `/api/monthly-summary/unsubscribe?id=<recap id>`. GET shows a confirm page and POST unsubscribes.
+  - **Delivery:** it is sent once per month, coordinated with database leases and Resend idempotency keys.
+- **Android home-screen widget** (`modules/snippet-widget`, a local Expo module): shows today's snippet count and has Type and Dictate buttons (`journalai://capture` and `journalai://capture?dictate=1`). It reads the SQLite file read-only, and the app refreshes it through `useSnippetWidget`.
+- **Password reset:** "Forgot password?" on sign-in opens `(auth)/forgot-password`, which emails a 6-digit code (`POST /auth/password/forgot`). Entering the code and a new password (`POST /auth/password/reset`) signs out every other device and signs in. See `backend/README.md` for the limits.
+- **Share-sheet capture (Android):** `expo-share-intent` with a `text/*` filter. `useShareCapture` in the root layout opens Quick capture prefilled with the shared text, or the page title plus the link, and saves it with `source: 'share'`. The iOS extension is disabled (`disableIOS`) until there's an iOS build.
+- **Mood:** the draft step now also returns a 1–3 word `mood`. It is stored on `Entry.mood`, can be edited or cleared through `PATCH /entries/:id`, appears as a chip next to the tags, and is written to the export frontmatter as `mood: "..."`. Entries drafted before this change have no mood until they are redrafted.
+
+### Before calling the extras done
+1. Run `npx prisma migrate deploy` (adds `monthly_summary`, `user.monthlyRecap` and `entry.mood`).
+2. Rebuild the dev client (new local native module).
+3. On Android, add the widget and check that the count updates after capture, sync, sign-out, and the rollover hour. Also check that tapping the widget opens capture.
+4. Test swiping on Today and Review, and capturing into a finalized day (both the keep and reopen paths).
+5. Reset the test account's password from the sign-in screen. Check that the email arrives, that a wrong code is rejected, and that the old session on any other device is signed out.
+6. Share a link from Chrome and some text from another app to JournalAI. Check that Quick capture opens prefilled, and that sharing while signed out works after you sign in.
+7. Draft a day and check the mood chip and the `mood:` line in the exported note.
+8. Opt a test account into the recap, call `MonthlySummaryService.run()` with a date on the 1st, and confirm the email arrives. Then confirm that its unsubscribe link and Gmail's one-click unsubscribe both turn the setting off.
 
 ## Then: Task 14 (`plans/tasks/14-deploy-and-apk.md`)
 - No `backend/Dockerfile` yet.

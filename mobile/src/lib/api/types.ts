@@ -10,6 +10,8 @@ export type User = {
   timezone: string;
   /** Local hour a new day starts. */
   dayRolloverHour: number;
+  /** Opted in to the monthly recap email. */
+  monthlyRecap: boolean;
   createdAt: string;
 };
 
@@ -25,6 +27,9 @@ export type Credentials = {
   email: string;
   password: string;
 };
+
+/** Body of `ResetPasswordRequest`: the emailed 6-digit code plus the new password. */
+export type PasswordReset = Credentials & { code: string };
 
 /** NestJS default error body. Validation errors put one message per failed constraint in an array. */
 export type ApiErrorBody = {
@@ -98,6 +103,8 @@ export type Entry = {
   /** What the AI originally wrote. */
   aiDraft: string;
   tags: string[];
+  /** Short AI impression of how the day felt, e.g. "tired but hopeful". */
+  mood: string | null;
   model: string | null;
   createdAt: string;
   updatedAt: string;
@@ -145,4 +152,4 @@ export type EntrySearchParams = { q?: string; from?: string; to?: string; limit?
 export type AnswerPayload = { answer: string } | { skipped: true };
 
 /** Body of `UpdateEntryRequest`; omitted fields are left as they are. */
-export type EntryPatch = { title?: string; body?: string; tags?: string[] };
+export type EntryPatch = { title?: string; body?: string; tags?: string[]; mood?: string };

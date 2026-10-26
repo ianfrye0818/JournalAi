@@ -38,6 +38,11 @@ import { LogoutCommand } from './Logout/Logout.command';
 import { RegisterCommand } from './Register/Register.command';
 import { RegisterRequest } from './Register/Register.request';
 import { RegisterResponse } from './Register/Register.response';
+import { RequestPasswordResetCommand } from './RequestPasswordReset/RequestPasswordReset.command';
+import { RequestPasswordResetRequest } from './RequestPasswordReset/RequestPasswordReset.request';
+import { ResetPasswordCommand } from './ResetPassword/ResetPassword.command';
+import { ResetPasswordRequest } from './ResetPassword/ResetPassword.request';
+import { ResetPasswordResponse } from './ResetPassword/ResetPassword.response';
 
 // Per-IP limit on the credential endpoints.
 const CREDENTIAL_THROTTLE = { default: { limit: 10, ttl: 60_000 } };
@@ -69,6 +74,33 @@ export class AuthController {
   @ApiTooManyRequestsResponse()
   login(@Body() body: LoginRequest): Promise<LoginResponse> {
     return this.commandBus.execute(new LoginCommand(body));
+  }
+
+  /** Always 204, whether or not the email has an account. */
+  @Post('password/forgot')
+  @Public()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(ThrottlerGuard)
+  @Throttle(CREDENTIAL_THROTTLE)
+  @ApiNoContentResponse()
+  @ApiTooManyRequestsResponse()
+  async requestPasswordReset(
+    @Body() body: RequestPasswordResetRequest,
+  ): Promise<void> {
+    await this.commandBus.execute(new RequestPasswordResetCommand(body));
+  }
+
+  @Post('password/reset')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @Throttle(CREDENTIAL_THROTTLE)
+  @ApiOkResponse({ type: ResetPasswordResponse })
+  @ApiTooManyRequestsResponse()
+  resetPassword(
+    @Body() body: ResetPasswordRequest,
+  ): Promise<ResetPasswordResponse> {
+    return this.commandBus.execute(new ResetPasswordCommand(body));
   }
 
   @Post('logout')
