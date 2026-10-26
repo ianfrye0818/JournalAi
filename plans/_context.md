@@ -54,6 +54,10 @@ Phase 1: Android APK through EAS (preview profile). Later: Play Store, App Store
   (`src/services/anthropic.service.ts`): structured outputs + Zod validation, one retry on unusable output, then 502.
   `GET /api/days/:date`, `POST /api/days/:date/interview` (max 2 rounds), `PATCH /api/questions/:id`. Prompt in
   `src/features/days/prompts/interview.prompt.ts`. Shared DTOs: `QuestionResponse`, `EntryResponse`, `DayDateParams`.
+- Obsidian export (after Task 12): `mobile/src/lib/export/` — `markdown.ts` (render + filename template), `vault.ts`
+  (SAF folder picked via `Directory.pickDirectoryAsync`, Android only; last-written hash per day in kv `export.last.<date>`
+  → confirm before replacing a file edited in Obsidian), `share.ts`/`zip.ts` (share one day / zip a month),
+  `actions.ts` (dialogs; `autoExportFinalized` runs from `useFinalizeDay`). Prefs in kv `settings.export.*`.
 
 ## Gotchas
 - Path aliases: Nest CLI rewrites them at build time, but Jest does not → `jest.moduleNameMapper` is required.

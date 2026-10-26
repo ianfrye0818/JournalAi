@@ -46,7 +46,8 @@
           "microphonePermission": "JournalAI uses the microphone so you can dictate snippets. Audio is never saved.",
           "speechRecognitionPermission": "JournalAI turns your speech into text so you can dictate snippets."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

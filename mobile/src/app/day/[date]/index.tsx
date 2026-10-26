@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EntryTags } from '@/components/day/entry-tags';
@@ -16,6 +16,7 @@ import type { DayStatus, Entry } from '@/lib/api/types';
 import { parseLocalDate } from '@/lib/dates';
 import { dayHref, stepForStatus } from '@/lib/days/flow';
 import { useDay, useReopenDay } from '@/lib/days/queries';
+import { canSaveToVault, saveDayToVault, shareDayEntry } from '@/lib/export/actions';
 import { useCachedDay } from '@/lib/history/cache';
 import { useSnippetsByDate } from '@/lib/snippets/repo';
 import { fromRemote } from '@/lib/sync/merge';
@@ -35,6 +36,7 @@ export default function DayPage() {
   const { data: localSnippets } = useSnippetsByDate(date);
   const reopen = useReopenDay(date);
   const [showSnippets, setShowSnippets] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const entry: Pick<Entry, 'title' | 'body' | 'tags'> | null = day.data?.entry ?? cached.entry ?? null;
   const status: DayStatus = day.data?.status ?? cached.day?.status ?? 'open';
@@ -75,6 +77,21 @@ export default function DayPage() {
   }
 
   const snippetList = snippets.map((s) => <SnippetCard key={s.clientId} snippet={s} />);
+
+  const runExport = (job: (e: NonNullable<typeof entry>) => Promise<void>) => {
+    if (!entry) return;
+    setExporting(true);
+    void job(entry).finally(() => setExporting(false));
+  };
+  const exportEntry = () => {
+    const share = () => runExport((e) => shareDayEntry(date, e, day.data));
+    if (!canSaveToVault()) return share();
+    Alert.alert('Export entry', undefined, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Share…', onPress: share },
+      { text: 'Save to vault', onPress: () => runExport((e) => saveDayToVault(date, e, day.data)) },
+    ]);
+  };
 
   return (
     <View style={styles.root}>
@@ -146,15 +163,15 @@ export default function DayPage() {
                 />
               </View>
               <View style={styles.grow}>
-                {/* Wired up by the Obsidian export (Task 12). */}
                 <Button
                   title="Export"
                   variant="secondary"
                   icon={{ ios: 'square.and.arrow.up', android: 'ios_share', web: 'ios_share' }}
                   size="lg"
                   fullWidth
-                  disabled
-                  accessibilityHint="Not available yet"
+                  loading={exporting}
+                  disabled={!entry}
+                  onPress={exportEntry}
                 />
               </View>
             </View>

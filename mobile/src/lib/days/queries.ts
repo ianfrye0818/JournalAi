@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 
 import { daysApi, entriesApi, questionsApi } from '@/lib/api/days';
 import type { AnswerPayload, DayView, EntryPatch } from '@/lib/api/types';
+import { autoExportFinalized } from '@/lib/export/actions';
 import { historyCache } from '@/lib/history/cache';
 import { refreshHistory } from '@/lib/history/queries';
 
@@ -125,6 +126,8 @@ export function useFinalizeDay(date: string) {
     onSuccess: (day) => {
       setDay(client, date, day);
       void invalidateList(client);
+      // Into the Obsidian vault, if one is set; reports its own errors.
+      void autoExportFinalized(day);
     },
   });
 }

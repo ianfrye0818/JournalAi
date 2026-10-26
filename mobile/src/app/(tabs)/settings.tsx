@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
+import { ExportSettingsCard } from '@/components/settings/export-settings';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Icon, Screen, type IconName } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
@@ -78,6 +79,8 @@ export default function SettingsScreen() {
           value="Not set"
         />
       </Card>
+
+      <ExportSettingsCard />
 
       <ThemedText type="small" themeColor="textTertiary" style={styles.version}>
         JournalAI {Constants.expoConfig?.version}

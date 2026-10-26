@@ -15,6 +15,7 @@ import { ApiError } from '@/lib/api/client';
 import { parseLocalDate } from '@/lib/dates';
 import { dayPageHref } from '@/lib/days/flow';
 import { useDayList } from '@/lib/days/queries';
+import { shareMonth } from '@/lib/export/actions';
 import { finalizedStreak, monthOf } from '@/lib/history/calendar';
 import { useHistory } from '@/lib/history/queries';
 
@@ -40,6 +41,12 @@ export default function DaysScreen() {
     [days, today],
   );
   const inMonth = days.filter((d) => monthOf(d.date) === month);
+  const finalizedInMonth = inMonth.filter((d) => d.status === 'finalized').length;
+  const [exporting, setExporting] = useState(false);
+  const exportMonth = () => {
+    setExporting(true);
+    void shareMonth(month).finally(() => setExporting(false));
+  };
   const monthName = parseLocalDate(`${month}-01`).toLocaleDateString(undefined, { month: 'long' });
   const open = (date: string) => router.push(dayPageHref(date));
 
@@ -90,6 +97,18 @@ export default function DaysScreen() {
           </View>
         )}
         <MonthCalendar month={month} onChangeMonth={setMonth} days={byDate} today={today} onPressDay={open} />
+        {finalizedInMonth > 0 && (
+          <View style={styles.export}>
+            <Button
+              title={`Export ${monthName}`}
+              variant="ghost"
+              icon={{ ios: 'square.and.arrow.up', android: 'ios_share', web: 'ios_share' }}
+              loading={exporting}
+              accessibilityHint={`Shares the ${finalizedInMonth} finalized ${finalizedInMonth === 1 ? 'entry' : 'entries'} as a zip of markdown files`}
+              onPress={exportMonth}
+            />
+          </View>
+        )}
         {inMonth.length === 0 ? (
           <ThemedText themeColor="textSecondary" style={styles.center}>
             Nothing captured in {monthName}.
@@ -171,6 +190,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+  },
+  export: {
+    alignItems: 'flex-end',
+    marginTop: -Spacing.two,
   },
   center: {
     textAlign: 'center',
