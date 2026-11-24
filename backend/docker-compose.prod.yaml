@@ -1,0 +1,23 @@
+# Runs only the API. Postgres and Redis are expected to already be running.
+# Usage: docker compose -f docker-compose.prod.yaml up -d --build
+services:
+  api:
+    build: .
+    image: journalai-api:latest
+    container_name: journalai-api
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    # Bound to localhost; put an HTTPS reverse proxy in front of it.
+    ports:
+      - '127.0.0.1:3000:3000'
+    # Lets the container reach Postgres/Redis running on the host as `host.docker.internal`.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
